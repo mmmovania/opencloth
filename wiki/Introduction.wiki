@@ -21,3 +21,8 @@ Currently, there is no collision detection/response other than the naive collisi
 
 == External dependencies ==
 The codes depend on the freeglut, glew and glm libraries. These are not included with this project and you would need to download them separately.
+
+== Understanding the code ==
+If the code does not make sense, I would suggest a read of the SIGGRAPH course notes (Realtime Physics: www.matthiasmueller.info/realtimephysics/coursenotes.pdf ). 
+
+For bug reports/suggestions/queries email to me at mova0002@e.ntu.edu.sg.
