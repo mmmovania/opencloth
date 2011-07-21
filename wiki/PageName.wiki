@@ -16,8 +16,8 @@ Current codes contain the complete implementations of
 5) Verlet integration
 6) Position based dynamics
 
-= What is not offered in the current version =
+== What is not offered in the current version ==
 Currently, there is no collision detection/response other than the naive collision to the floor. 
 
-= External dependencies =
+== External dependencies ==
 The codes depend on the freeglut, glew and glm libraries. These are not included with this project and you would need to download them separately.
