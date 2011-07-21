@@ -32,6 +32,7 @@ Some features that I will be adding soon.
   * Hierarchical position based dynamics
   * Collision detection and response
   * Demo application encapsulating all algorithms
+  * Extend to OpenGL3.3 core profile
   * GPU implementations (CUDA / GLSL)
   * Shading and Texturing
   * Platform independent library (C++ class hierarchy)
