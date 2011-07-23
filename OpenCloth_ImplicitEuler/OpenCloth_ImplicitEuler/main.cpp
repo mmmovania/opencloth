@@ -261,9 +261,6 @@ void SolveConjugateGradient(glm::mat3 A, glm::vec3& x, glm::vec3 b) {
 	}
 }
 
-
-
-
 vector<GLushort> indices;
 vector<Spring> springs;
 
@@ -278,6 +275,8 @@ vector<glm::vec3> deltaP2;
 LargeVector<glm::vec3> V_new;
 LargeVector<glm::mat3> M; //the mass matrix
 glm::mat3 I=glm::mat3(1);//identity matrix
+
+LargeVector<glm::mat3> K; //stiffness matrix
 
 vector<float> C; //for implicit integration
 vector<float> C_Dot; //for implicit integration
@@ -524,15 +523,9 @@ void InitGL() {
 
 	M = mass*M;
 
+	K.resize(total_springs);
 
-	C.resize(total_springs );
-	C_Dot.resize(total_springs );
-	dc_dp.resize(total_springs );
-	df_dx.resize(total_springs );
-	deltaP2.resize(total_springs );
-	memset(&(C[0]),0,total_springs*sizeof(float));
-	memset(&(C_Dot[0]),0,total_springs*sizeof(float));
-	memset(&(deltaP2[0].x),0,total_springs*sizeof(glm::vec3));
+	
 
 }
 
@@ -620,9 +613,7 @@ void OnShutdown() {
 	X.clear();
 	V.clear();
 	V_new.clear();
-	M.clear();
-	df_dx.clear();
-	dc_dp.clear();
+	M.clear();	 
 	F.clear();
 	springs.clear();
 	indices.clear();
@@ -652,16 +643,10 @@ void ComputeForces() {
 
 
 		//fill in the Jacobian matrix
-		//float dist2 = dist*dist;
-		//float lo_l  = springs[i].rest_length/dist;
-		//K[i] = springs[i].Ks* (-I + (lo_l * (I - glm::dot(deltaP, deltaP)/dist2) ) );
-
-		C[i] = dist-springs[i].rest_length;
-		dc_dp[i] = deltaP/dist;
-		C_Dot[i] = glm::dot(v1, -dc_dp[i]) + glm::dot(v2, dc_dp[i]);
-		deltaP2[i] = glm::vec3(deltaP.x*deltaP.x,deltaP.y*deltaP.y, deltaP.z*deltaP.z);
-
-
+		float dist2 = dist*dist;
+		float lo_l  = springs[i].rest_length/dist;
+		K[i] = springs[i].Ks* (-I + (lo_l * (I - glm::outerProduct(deltaP, deltaP)/dist2) ) );
+	
 		float leftTerm = -springs[i].Ks * (dist-springs[i].rest_length);
 		float rightTerm = springs[i].Kd * (glm::dot(deltaV, deltaP)/dist);
 		glm::vec3 springForce = (leftTerm + rightTerm)*glm::normalize(deltaP);
@@ -672,52 +657,12 @@ void ComputeForces() {
 			F[springs[i].p2] -= springForce;
 	}
 }
-void CalcForceDerivatives() {
-	//clear the derivatives
-	memset(&(df_dx[0]),0,total_points*sizeof(glm::mat3));
-//	memset(&(df_dv[0]),0,total_points*sizeof(glm::mat3));
-
-	size_t i=0;
-
-	glm::mat3 d2C_dp2[2][2]={glm::mat3(1.0f),glm::mat3(1.0f),glm::mat3(1.0f),glm::mat3(1.0f)};
-
-	//#pragma omp parallel for
-	for(i=0;i<springs.size();i++) {
-		float c1 = C[i];
-		d2C_dp2[0][0][0][0] = (-c1*deltaP2[i].x+c1);
-		d2C_dp2[0][0][1][1] = (-c1*deltaP2[i].y+c1);
-		d2C_dp2[0][0][2][2] = (-c1*deltaP2[i].z+c1);
-
-		d2C_dp2[0][1][0][0] = (c1*deltaP2[i].x-c1);
-		d2C_dp2[0][1][1][1] = (c1*deltaP2[i].y-c1);
-		d2C_dp2[0][1][2][2] = (c1*deltaP2[i].z-c1);
-
-		d2C_dp2[1][0]  = d2C_dp2[0][1];
-		d2C_dp2[1][1]  = d2C_dp2[0][0];
-
-		glm::mat3 dp1  = glm::outerProduct(dc_dp[i], dc_dp[i]);
-		glm::mat3 dp2  = glm::outerProduct(dc_dp[i], -dc_dp[i]);
-		glm::mat3 dp3  = glm::outerProduct(-dc_dp[i],-dc_dp[i]);
-
-		df_dx[i] += -springs[i].Ks* (dp1 + (d2C_dp2[0][0]*C[i]) ) - springs[i].Kd * (d2C_dp2[0][0]*C_Dot[i]);
-		df_dx[i] += -springs[i].Ks* (dp2 + (d2C_dp2[0][1]*C[i]) ) - springs[i].Kd * (d2C_dp2[0][1]*C_Dot[i]);
-		df_dx[i] += -springs[i].Ks* (dp2 + (d2C_dp2[1][1]*C[i]) ) - springs[i].Kd * (d2C_dp2[1][1]*C_Dot[i]);
-
-		//df_dv[i] += -springs[i].Kd*dp1;
-		//df_dv[i] += -springs[i].Kd*dp2;
-		//df_dv[i] += -springs[i].Kd*dp3;
-	}
-
-}
-
-
-
-
+ 
 void IntegrateImplicit(float deltaTime) {
 	float deltaT2 = deltaTime*deltaTime;
-	CalcForceDerivatives();
+	 
 
-	LargeVector<glm::mat3> A = M - deltaT2* df_dx;
+	LargeVector<glm::mat3> A = M - deltaT2* K;
 	LargeVector<glm::vec3> b = M*V + deltaTime*F;
 
 	SolveConjugateGradient(A, V_new, b);
