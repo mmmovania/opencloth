@@ -52,7 +52,7 @@ DAMAGE.
 #include <glm/glm.hpp>
  
 //undefine if u want to use the default bending constraint of pbd
-//#define USE_TRIANGLE_BENDING_CONSTRAINT
+#define USE_TRIANGLE_BENDING_CONSTRAINT
 
 #pragma comment(lib, "glew32.lib")
 
@@ -62,7 +62,7 @@ const int width = 1024, height = 1024;
 #define PI 3.1415926536f
 #define EPSILON  0.0000001f
  
-int numX = 20, numY=20;
+int numX = 20, numY=20; //these ar the number of quads
 const size_t total_points = (numX+1)*(numY+1);
 int size = 4;
 float hsize = size/2.0f;
@@ -76,7 +76,11 @@ int selected_index = -1;
 float global_dampening = 0.98f; //DevO: 24.07.2011  //global velocity dampening !!!
 
 struct DistanceConstraint {	int p1, p2;	float rest_length, k; float k_prime; };
+#ifdef USE_TRIANGLE_BENDING_CONSTRAINT
+struct BendingConstraint {	int p1, p2, p3;	float rest_length,  w,  k; float k_prime;};
+#else
 struct BendingConstraint {	int p1, p2, p3, p4;	float rest_length1, rest_length2, w1, w2,  k; float k_prime;};
+#endif
 
 vector<GLushort> indices;
 vector<DistanceConstraint> d_constraints;
@@ -98,10 +102,10 @@ int state =1 ;
 float dist=-23;
 const int GRID_SIZE=10;
 
-const size_t solver_iterations = 2; //number so solver iterations per step. PBD  
+const size_t solver_iterations = 2; //number of solver iterations per step. PBD  
 
 float kBend = 0.5f; 
-float kStretch = 1.0f;  
+float kStretch = 1.0f; 
 float kDamp = 1.0f;
 glm::vec3 gravity=glm::vec3(0.0f,-0.00981f,0.0f);  
 
@@ -145,7 +149,23 @@ void AddDistanceConstraint(int a, int b, float k) {
 
 	d_constraints.push_back(c);
 }
-
+#ifdef USE_TRIANGLE_BENDING_CONSTRAINT
+void AddBendingConstraint(int pa, int pb, int pc, float k) {
+	BendingConstraint c;
+	c.p1=pa;
+	c.p2=pb;
+	c.p3=pc; 
+	
+	c.w = W[pa] + W[pb] + 2*W[pc]; 
+	glm::vec3 center = 0.3333f * (X[pa] + X[pb] + X[pc]);
+ 	c.rest_length = glm::length(X[pc]-center);
+	c.k = k;
+	c.k_prime = 1.0f-pow((1.0f-c.k), 1.0f/solver_iterations);  //1.0f-pow((1.0f-c.k), 1.0f/ns);
+	if(c.k_prime>1.0) 
+		c.k_prime = 1.0;
+	b_constraints.push_back(c);
+}
+#else
 void AddBendingConstraint(int pa, int pb, int pc,int pd, float k) {
 	BendingConstraint c;
 	c.p1=pa;
@@ -165,6 +185,7 @@ void AddBendingConstraint(int pa, int pb, int pc,int pd, float k) {
 		c.k_prime = 1.0;
 	b_constraints.push_back(c);
 }
+#endif
 void OnMouseDown(int button, int s, int x, int y)
 {
 	if (s == GLUT_DOWN) 
@@ -260,12 +281,18 @@ inline glm::vec3 GetNormal(int ind0, int ind1, int ind2) {
 	return glm::normalize(glm::cross(e1,e2));
 }
 
+#ifndef USE_TRIANGLE_BENDING_CONSTRAINT
 inline float GetDihedralAngle(BendingConstraint c, float& d, glm::vec3& n1, glm::vec3& n2) {	 
 	n1 = GetNormal(c.p1, c.p2, c.p3);
 	n2 = GetNormal(c.p1, c.p2, c.p4); 
 	d = glm::dot(n1, n2);
 	return acos(d);
 }
+#else
+inline int getIndex(int i, int j) {
+	return j*(numX+1) + i;
+}
+#endif
 void InitGL() { 
  
 	startTime = (float)glutGet(GLUT_ELAPSED_TIME);
@@ -377,6 +404,21 @@ void InitGL() {
 
 	
 	// create bending constraints	
+	#ifdef USE_TRIANGLE_BENDING_CONSTRAINT
+	//add vertical constraints
+	for(int i=0;i<=numX;i++) {
+		for(int j=0;j<numY-1 ;j++) {
+			AddBendingConstraint(getIndex(i,j), getIndex(i,(j+1)), getIndex(i,j+2), kBend);
+		}
+	}
+	//add horizontal constraints
+	for(int i=0;i<numX-1;i++) {
+		for(int j=0;j<=numY;j++) {	   
+			AddBendingConstraint(getIndex(i,j), getIndex(i+1,j), getIndex(i+2,j), kBend);
+		}
+	}
+
+	#else
 	for(int i = 0; i < v-1; ++i) {
 		for(int j = 0; j < u-1; ++j) {	 			 
 			int p1 = i * (numX+1) + j;            
@@ -391,7 +433,6 @@ void InitGL() {
 			}     
 		}
 	}		 
-
 	float d;
 	glm::vec3 n1, n2;
 	phi0.resize(b_constraints.size());
@@ -399,6 +440,7 @@ void InitGL() {
 	for(i=0;i<b_constraints.size();i++) {		
 		phi0[i] = GetDihedralAngle(b_constraints[i],d,n1,n2);		
 	}	
+	#endif
 }
 
 void OnReshape(int nw, int nh) {
@@ -480,12 +522,16 @@ void OnRender() {
 	}
 	glEnd();
 
-	#ifdef _DEBUG
+
 	//draw normals for debug only 	
+#ifndef USE_TRIANGLE_BENDING_CONSTRAINT
+#ifdef _DEBUG
 	BendingConstraint b;
 	float size = 0.1f;
 	float d = 0;
 	glm::vec3 n1, n2, c1, c2;
+
+	
 	glBegin(GL_LINES);
 	for(i=0;i<b_constraints.size();i++) {
 		b = b_constraints[i];
@@ -499,8 +545,8 @@ void OnRender() {
 		glVertex3f(c2.x,c2.y,c2.z);		glVertex3f(c2.x+size*n2.x,c2.y+size*n2.y,c2.z+size*n2.z);
 	}
 	glEnd();
-	#endif
-
+#endif
+#endif
 	glutSwapBuffers();
 }
 
@@ -629,24 +675,15 @@ void UpdateBendingConstraint(int index) {
  
 	//global_k is a percentage of the global dampening constant 
 	float global_k = global_dampening*0.01f; 
-	glm::vec3 center1 = 0.3333f * (tmp_X[c.p1] + tmp_X[c.p2] + tmp_X[c.p3]);
-	glm::vec3 center2 = 0.3333f * (tmp_X[c.p1] + tmp_X[c.p2] + tmp_X[c.p4]);
-	
-	glm::vec3 dir_center1 = tmp_X[c.p3]-center1;
-	glm::vec3 dir_center2 = tmp_X[c.p4]-center2;
+	glm::vec3 center = 0.3333f * (tmp_X[c.p1] + tmp_X[c.p2] + tmp_X[c.p3]);
+	glm::vec3 dir_center = tmp_X[c.p3]-center;
+	float dist_center = glm::length(dir_center);
 
-	float dist_center1 = glm::length(dir_center1);
-	float dist_center2 = glm::length(dir_center2);
-
-	float diff1 = 1.0f - ((global_k + c.rest_length1) / dist_center1);
-	glm::vec3 dir_force1 = dir_center1 * diff1;
-
-	float diff2 = 1.0f - ((global_k + c.rest_length2) / dist_center2);
-	glm::vec3 dir_force2 = dir_center2 * diff2;
-	
-	glm::vec3 fa = c.k_prime * ((2.0f*W[c.p1])/c.w1) * dir_force1;
-	glm::vec3 fb = c.k_prime * ((2.0f*W[c.p2])/c.w1) * dir_force1;
-	glm::vec3 fc = -c.k_prime * ((4.0f*W[c.p3])/c.w1) * dir_force1;
+	float diff = 1.0f - ((global_k + c.rest_length) / dist_center);
+	glm::vec3 dir_force = dir_center * diff;
+	glm::vec3 fa = c.k_prime * ((2.0f*W[c.p1])/c.w) * dir_force;
+	glm::vec3 fb = c.k_prime * ((2.0f*W[c.p2])/c.w) * dir_force;
+	glm::vec3 fc = -c.k_prime * ((4.0f*W[c.p3])/c.w) * dir_force;
 
 	if(W[c.p1] > 0.0)  {
 		tmp_X[c.p1] += fa;
@@ -657,21 +694,6 @@ void UpdateBendingConstraint(int index) {
 	if(W[c.p3] > 0.0) {
 		tmp_X[c.p3] += fc;
 	}
-
-	fa = c.k_prime * ((2.0f*W[c.p1])/c.w2) * dir_force2;
-	fb = c.k_prime * ((2.0f*W[c.p2])/c.w2) * dir_force2;
-	fc = -c.k_prime * ((4.0f*W[c.p4])/c.w2) * dir_force2;
-
-	if(W[c.p1] > 0.0) {
-		tmp_X[c.p1] += fa;
-	}
-	if(W[c.p2] > 0.0) {
-		tmp_X[c.p2] += fb;
-	}
-	if(W[c.p4] > 0.0) {
-		tmp_X[c.p4] += fc;
-	}
-
 #else
 
 	//Using the dihedral angle approach of the position based dynamics		
