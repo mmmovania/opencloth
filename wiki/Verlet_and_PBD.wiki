@@ -7,9 +7,9 @@ This text will try to identify differences between the Jackobsen's approach and 
 
 = Explanation =
 Basically, for any method you use for cloth simulation, it has three things that co-exist in the following order:
-#  The calculationg of external forces
-#  The application of constraints (i.e. calculation of internal forces)
-#  Integration of positions and velocities
+  # The calculationg of external forces
+  # The application of constraints (i.e. calculation of internal forces)
+  # Integration of positions and velocities
 The simulation tries to solve the 2nd order ODE (Ma+Cv+Kx=F_ext) using an integration of 2 first order differential eq. One for position and other for velocity. So if you use explicit Euler integration the equations are:
 {{{
 v(t+dt) = v(t) + dt*a(t)
