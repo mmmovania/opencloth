@@ -26,5 +26,5 @@ So the difference is clear verlet is an integration scheme, position based dynam
 
 I hope this clears up the differences between the two. <br>
 Additional read: <br>
-Jackobsen's approach<br> (http://www.gamasutra.com/resource_guide/20030121/jacobson_01.shtml)<br>
+Jackobsen's approach(http://www.gamasutra.com/resource_guide/20030121/jacobson_01.shtml)<br>
 PBD (http://www.matthiasmueller.info/publications/posBasedDyn.pdf)<br>
