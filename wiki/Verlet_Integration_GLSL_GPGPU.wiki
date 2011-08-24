@@ -21,7 +21,7 @@ Texture prevPositoinTexture;   //previous positions
 void main() {
    Get current position by looking up the position texture
    Get previous position by looking up the prev. position texture
-   Calculate initial velocity using Verlet integration
+   Calculate initial velocity using Verlet integration (v = (x_i-x_last)/dt)
    Calculate index from the uv coordinates and texture size
    Initialize force with gravity and damping the initial velocity   
    for each neighbor n
