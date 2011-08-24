@@ -2,9 +2,9 @@
 
 = Introduction =
 
-OpenCloth project has been initiated with a view that it may help beginners and researchers alike to implement the basic algothims for cloth simulation. It is not intended as another library that you can plugin into your game engine directly. Rather, you can learn from it and then implement a technique or two in you own game/physics engine.
+Introducing an OpenGL based cloth simulation code base. We implement all of the existing cloth simulation algorithms in as simplistic an approach as possible so that learners may know exactly what is needed to get a cloth simulation system up and running in OpenGL with a minimum of fuss. OpenCloth project has been initiated with a view that it may help beginners and researchers alike to implement the basic algothims for cloth simulation using OpenGL API. It is not intended as another library that you can plugin into your game engine directly. Rather, you can learn from it and then implement a technique or two in you own game/physics engine. With a little bit of effort, it should be straight forward to implement the discussed algorithms on other platforms and Graphics API.
 
-While at the current initial stage, we are just releasing a bunch of source codes, later on, we will try to implement these in the form of a platform independent library.
+While at the current initial stage, we are just releasing a bunch of source codes, later on, we will try to implement these in the form of a platform independent library. 
 
 = Details =
 
