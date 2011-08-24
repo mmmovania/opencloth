@@ -72,9 +72,7 @@ void main() {
 	vec3 x_i	= texture2D(X, gl_TexCoord[0].st).xyz;
 	vec3 x_last = texture2D(X_last, gl_TexCoord[0].st).xyz;
 	vec3 vel	= (x_i - x_last) / dt;	// calc. velocity according to verlet integration
-	
-	//vec2 step = vec2(1.0,1.0) / (texsize_x - 1.0, texsize_y-1.0);
-	
+		
 	float ix = floor(gl_TexCoord[0].s * texsize_x);
 	float iy = floor(gl_TexCoord[0].t * texsize_y);
 	float index = iy * texsize_x + ix;
@@ -103,8 +101,7 @@ void main() {
 		vec2 coord_neigh = vec2(ix + j, iy + i) * step;
 		
 		float rest_length = length(coord)*inv_cloth_size_x;
-		//float rest_length =  max(abs(coord.x*inv_cloth_size_x), abs(coord.y*inv_cloth_size_y));
-
+		
 		vec3 p2 = texture2D(X, coord_neigh).xyz;
 		 
 		vec3 deltaP = x_i - p2;		 
