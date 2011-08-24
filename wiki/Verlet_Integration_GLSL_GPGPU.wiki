@@ -16,8 +16,8 @@ I went with the point-centric approach for my implementation.
 == Data structure ==
 Since this approach uses the fragment shader, it uses the standard GPGPU approach whereby a full screen quad is rendered and then a fragment shader is invoked. Force calculation and constraints are applied per pixel and the results are written to an offscreen texture. To aid in this, I use the ping pong approach, which involves writing to a render target (draw framebuffer) texture while reading from another render target (read framebuffer). First the FBO and vertex buffers are setup to contain the cloth vertex positions. For Verlet integration, two buffers are needed so that the previous position may also be stored. Initially the current positions are written to the previous position texture. In the render function, the quad is rendered and then the fragment shader is invoked. To give an idea of whats going on in the fragment shader, have a look at the following pseudocode. 
 {{{
-Texture positoinTexture;       //current positions
-Texture prevPositoinTexture;   //previous positions
+Texture positionTexture;       //current positions
+Texture prevPositionTexture;   //previous positions
 void main() {
    Get current position by looking up the position texture
    Get previous position by looking up the prev. position texture
@@ -25,15 +25,15 @@ void main() {
    Calculate index from the uv coordinates and texture size
    Initialize force with gravity and damping the initial velocity   
    for each neighbor n
-      Find its coordinates
-      Get its position and computer the spring force 
-      Add spring force to the force for current point
+      Find coordinates of n
+      Get position of n and compute its spring force 
+      Add spring force to the total force 
    end for
 
    Calculate acceleration using a=F/m;
-   Apply collision constraints
    Calculate new position using Verlet integration (x_i=2x_i-x_last + a*t*t)
-   Write positions to outputs
+   Apply collision constraints
+   Write positions to shader outputs
 }
 }}}
 That's it. The only tricky part in this code is the actual setup of FBO and the ping pong strategy. The rest of the things are all standard Verlet implementation. I hope this document clarifies the GLSL based code for Verlet integration.
