@@ -75,7 +75,6 @@ vector<Spring> springs;
 
 vector<glm::vec3> X;
 vector<glm::vec3> X_last;
-vector<glm::vec3> V;
 vector<glm::vec3> F;
 
 
@@ -94,11 +93,11 @@ int spring_count=0;
 char info[MAX_PATH]={0};
 
 const float DEFAULT_DAMPING =  -0.0125f;
-float	KsStruct = 0.75f,KdStruct = -0.25f;
-float	KsShear = 0.75f,KdShear = -0.25f;
-float	KsBend = 0.95f,KdBend = -0.25f;
+float	KsStruct = 50.75f,KdStruct = -0.25f;
+float	KsShear = 50.75f,KdShear = -0.25f;
+float	KsBend = 50.95f,KdBend = -0.25f;
 glm::vec3 gravity=glm::vec3(0.0f,-0.00981f,0.0f);
-float mass = 0.5f;
+float mass = 1.0f;
 
 float timeStep =  1/60.0f;
 float currentTime = 0;
@@ -190,8 +189,7 @@ void OnMouseMove(int x, int y)
 			glutSetCursor(GLUT_CURSOR_LEFT_RIGHT);
 		else
 			glutSetCursor(GLUT_CURSOR_UP_DOWN);
-
-		V[selected_index] = glm::vec3(0);
+ 
 		X[selected_index].x += Right[0]*valX ;
 		float newValue = X[selected_index].y+Up[1]*valY;
 		if(newValue>0)
@@ -234,8 +232,7 @@ void InitGL() {
 
 	X.resize(total_points);
 	X_last.resize(total_points);
-	V.resize(total_points);
-	F.resize(total_points);
+ 	F.resize(total_points);
 
 	//fill in positions
 	for( j=0;j<=numY;j++) {
@@ -245,10 +242,6 @@ void InitGL() {
 			count++;
 		}
 	}
-
-	//fill in velocities
-
-	memset(&(V[0].x),0,total_points*sizeof(glm::vec3));
 
 	//fill in indices
 	GLushort* id=&indices[0];
@@ -394,7 +387,6 @@ void OnRender() {
 
 void OnShutdown() {
 	X.clear();
-	V.clear();
 	X_last.clear();
 	F.clear();
 	indices.clear();
@@ -412,8 +404,7 @@ void IntegrateVerlet(float deltaTime) {
 		glm::vec3 buffer = X[i];
 
 		X[i] = X[i] + (X[i] - X_last[i]) + deltaTime2Mass*F[i];
-
-		V[i]   = (X[i] - X_last[i])/deltaTime;
+ 
 		X_last[i] = buffer;
 
 		if(X[i].y <0) {
@@ -421,25 +412,32 @@ void IntegrateVerlet(float deltaTime) {
 		}
 	}
 }
-void ComputeForces() {
+inline glm::vec3 GetVerletVelocity(glm::vec3 x_i, glm::vec3 xi_last, float dt ) {
+	return  (x_i - xi_last) / dt;
+}
+void ComputeForces(float dt) {
 	size_t i=0;
 
 	for(i=0;i<total_points;i++) {
 		F[i] = glm::vec3(0);
-
+		glm::vec3 V = GetVerletVelocity(X[i], X_last[i], dt);
 		//add gravity force
-		if(i!=0 && i!=( numX)	)
-			F[i] += gravity;
+		if(i!=0 && i!=( numX)	)		 
+			F[i] += gravity*mass;
 		//add force due to damping of velocity
-		F[i] += DEFAULT_DAMPING*V[i];
+		F[i] += DEFAULT_DAMPING*V;
 	}
 
 
 	for(i=0;i<springs.size();i++) {
 		glm::vec3 p1 = X[springs[i].p1];
+		glm::vec3 p1Last = X_last[springs[i].p1];
 		glm::vec3 p2 = X[springs[i].p2];
-		glm::vec3 v1 = V[springs[i].p1];
-		glm::vec3 v2 = V[springs[i].p2];
+		glm::vec3 p2Last = X_last[springs[i].p2];
+
+		glm::vec3 v1 = GetVerletVelocity(p1, p1Last, dt);
+		glm::vec3 v2 = GetVerletVelocity(p2, p2Last, dt);
+
 		glm::vec3 deltaP = p1-p2;
 		glm::vec3 deltaV = v1-v2;
 		float dist = glm::length(deltaP);
@@ -501,9 +499,9 @@ void OnIdle() {
 }
 
 void StepPhysics(float dt ) {
-	ComputeForces();
-		IntegrateVerlet(timeStep);
-	ApplyProvotDynamicInverse();
+	ComputeForces(dt);
+	IntegrateVerlet(dt);
+	//ApplyProvotDynamicInverse();
 }
 
 void main(int argc, char** argv) {
