@@ -354,6 +354,12 @@ void InitGL() {
 	verletShader.UnUse();
 
 	startTime = (float)glutGet(GLUT_ELAPSED_TIME);
+	// get ticks per second
+    QueryPerformanceFrequency(&frequency);
+
+    // start timer
+    QueryPerformanceCounter(&t1);
+
 	glEnable(GL_DEPTH_TEST);
 	int i=0, j=0, count=0;
 	int l1=0, l2=0; 
