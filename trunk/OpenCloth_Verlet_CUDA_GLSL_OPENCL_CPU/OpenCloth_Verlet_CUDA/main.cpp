@@ -116,6 +116,7 @@ int texture_size_y=0;
 float startTime =0, fps=0 ;
 int totalFrames=0;
 
+GLuint clothVAOID, clothVBOVerticesID, clothVBOIndicesID;
 
 GLSLShader verletShader, renderShader;
 GLuint fboID[2];
@@ -341,7 +342,42 @@ void InitVBO(){
 	glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_DRAW); 
 	//glBindBuffer(GL_ARRAY_BUFFER, 0);	
 }
+void InitClothVAO() {
+	glGenVertexArrays(1, &clothVAOID);
+	glGenBuffers (1, &clothVBOVerticesID);
+	glGenBuffers (1, &clothVBOIndicesID);
+	glBindVertexArray(clothVAOID);
+		glBindBuffer (GL_ARRAY_BUFFER, clothVBOVerticesID);
+		glBufferData (GL_ARRAY_BUFFER, sizeof(float)*4*X.size(), &X[0].x, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer (0, 4, GL_FLOAT, GL_FALSE,0,0);
+		
+		CHECK_GL_ERRORS
+		
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, clothVBOIndicesID);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort)*indices.size(), &indices[0], GL_STATIC_DRAW);
+		
+
+	glBindVertexArray(0);
+}
+
+void DrawCloth()
+{ 
+	glBindVertexArray(clothVAOID);
+		glDrawElements(GL_TRIANGLES, indices.size(),GL_UNSIGNED_SHORT,0);
+	glBindVertexArray(0);	
+}
+
+void DrawClothPoints()
+{ 
+	glBindVertexArray(clothVAOID);
+		//draw the masses last						
+		glDrawArrays(GL_POINTS, 0, total_points);					
+	glBindVertexArray(0);	
+}
+
 void InitGL() { 
+
 	texture_size_x =  numX+1;
 	texture_size_y =  numY+1;
 	CHECK_GL_ERRORS
@@ -467,6 +503,8 @@ void InitGL() {
 	  
 	InitFBO();
 	InitVBO(); 
+	InitClothVAO();
+
 	cutilSafeCall(cudaGLSetGLDevice( cutGetMaxGflopsDeviceId() ));	// use device with highest Gflops/s
 	
 	InitCUDA(total_points);
@@ -523,7 +561,7 @@ void DrawFullScreenQuad() {
 
 void RenderBuffer() {
 	renderShader.Use();
-		//glBindBuffer(GL_ARRAY_BUFFER, vboID);
+		glBindBuffer(GL_ARRAY_BUFFER, vboID);
 		glVertexPointer(4, GL_FLOAT, 0,0);
 		glEnableClientState(GL_VERTEX_ARRAY);
 			//draw plygons
@@ -544,11 +582,11 @@ void RenderGPU_OpenCL(){
 	
 	static unsigned int size = texture_size_x  * texture_size_y * 4 * sizeof(float);
 	
-	//glBindBuffer(GL_ARRAY_BUFFER, vboID); 			
+	glBindBuffer(GL_ARRAY_BUFFER, vboID); 			
 	float* ptr = (float*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		ReadBuffer(ptr, size);
 	glUnmapBuffer(GL_ARRAY_BUFFER); 
-	//glBindBuffer(GL_ARRAY_BUFFER, 0); 
+	glBindBuffer(GL_ARRAY_BUFFER, 0); 
 
 	RenderBuffer();
 
@@ -640,9 +678,17 @@ void RenderCPU() {
         accumulator -= timeStep;
     }
 
+	//Update positions
+	glBindVertexArray(clothVAOID);
+	glBindBuffer(GL_ARRAY_BUFFER,clothVBOVerticesID);
+	GLfloat* pData = (GLfloat*)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
+	memcpy(pData, &X[0].x, X.size()*sizeof(glm::vec4));
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+
+
  	//draw polygons
 	glColor3f(1,1,1);
-	glBegin(GL_TRIANGLES);
+	/*glBegin(GL_TRIANGLES);
 	for(i=0;i<indices.size();i+=3) {
 		glm::vec3 p1 = vec3(X[indices[i]]);
 		glm::vec3 p2 = vec3(X[indices[i+1]]);
@@ -651,17 +697,20 @@ void RenderCPU() {
 		glVertex3f(p2.x,p2.y,p2.z);
 		glVertex3f(p3.x,p3.y,p3.z);
 	}
-	glEnd();	 
+	glEnd();*/
+	DrawCloth();
 
+	glColor3f(1,0,0);
 	//draw points	
-	glBegin(GL_POINTS);
+	/*glBegin(GL_POINTS);
 	for(i=0;i<total_points;i++) {
 		glm::vec3 p = vec3(X[i]);
 		int is = (i==selected_index);
 		glColor3f((float)!is,(float)is,(float)is);
 		glVertex3f(p.x,p.y,p.z);
 	}
-	glEnd();
+	glEnd();*/
+	DrawClothPoints();
  
 }
 void OnRender() {		
