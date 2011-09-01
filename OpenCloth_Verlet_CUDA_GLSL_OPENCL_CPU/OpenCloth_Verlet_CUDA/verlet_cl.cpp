@@ -113,30 +113,41 @@ void InitOpenCL(const unsigned int size, int texture_size_x, int texture_size_y,
 
 void ShutdownOpenCL()
 {
-	cl_int ciErrNum;
+	cl_int ciErrNum = CL_SUCCESS;
    
 	// cleanup memory
 	if (X[0] != NULL) 
 	{ 
-		clReleaseMemObject(X[0]);
-		clReleaseMemObject(X[1]);
+		ciErrNum |= clReleaseMemObject(X[0]);
+		ciErrNum |= clReleaseMemObject(X[1]);
 		X[0] = NULL;
 		X[1] = NULL;
 	}
 
 	if (X_last[0] != NULL)
 	{ 
-		clReleaseMemObject(X_last[0]);
-		clReleaseMemObject(X_last[1]);
+		ciErrNum |= clReleaseMemObject(X_last[0]);
+		ciErrNum |= clReleaseMemObject(X_last[1]);
+
 		X_last[0] = NULL;
 		X_last[1] = NULL;
 	}
+	oclCheckError(ciErrNum, CL_SUCCESS);
 
-	clReleaseMemObject(hVbo);
-	ciErrNum  = clReleaseCommandQueue(cqCommandQueue);
+	ciErrNum |= clReleaseMemObject(hVbo);
+	oclCheckError(ciErrNum, CL_SUCCESS);
+
+	ciErrNum |= clReleaseProgram(hProgram);
+	oclCheckError(ciErrNum, CL_SUCCESS);
+
+	ciErrNum |= clReleaseKernel(hKernel);
+	oclCheckError(ciErrNum, CL_SUCCESS);
+
+	ciErrNum |= clReleaseCommandQueue(cqCommandQueue);
+	oclCheckError(ciErrNum, CL_SUCCESS);
+
     ciErrNum |= clReleaseContext(cxGPUContext);
     oclCheckError(ciErrNum, CL_SUCCESS);
-	
 }
 
   

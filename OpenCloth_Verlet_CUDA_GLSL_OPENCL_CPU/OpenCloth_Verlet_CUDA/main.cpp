@@ -776,6 +776,9 @@ void OnRender() {
 }
 
 void OnShutdown() {
+	ShutdownCUDA();
+	ShutdownOpenCL();
+
 	X.clear();
 	X_last.clear();
 	F.clear();
@@ -786,11 +789,12 @@ void OnShutdown() {
 	glDeleteFramebuffers(2, fboID);
 	glDeleteTextures(4, attachID);
 
+	glDeleteVertexArrays(1, &clothVAOID);
+	glDeleteBuffers (1, &clothVBOVerticesID);
+	glDeleteBuffers (1, &clothVBOIndicesID);
+
 	renderShader.DeleteProgram();
 	verletShader.DeleteProgram();
-
-	ShutdownCUDA();
-	ShutdownOpenCL();
 }
 
 
