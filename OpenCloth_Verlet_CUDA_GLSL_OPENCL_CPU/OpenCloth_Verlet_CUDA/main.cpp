@@ -19,7 +19,7 @@
 //if you acknowledge this in your code.
 //
 //Controls:
-//   Spacebar to toggle btw the four modes i.e. GPU_GLSL, GPU_CUDA, GPU_OPENCL and CPU
+//   Spacebar to toggle btw the five modes i.e. GPU_GLSL, GPU_CUDA, GPU_OPENCL, CPU and CPU optimized
 //   left click on any empty region to rotate, middle click to zoom 
 //   left click and drag any point to drag it.
 //
