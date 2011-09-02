@@ -51,7 +51,7 @@ using namespace std;
 const int width = 1024, height = 1024;
 
 int numX = 63, numY=63;
-const size_t total_points = (numX+1)*(numY+1);
+const int total_points = (numX+1)*(numY+1);
 int sizeX = 4, 
 	sizeY = 4;
 float hsize = sizeX/2.0f;
@@ -218,7 +218,7 @@ void OnMouseDown(int button, int s, int x, int y)
 		double objX=0, objY=0, objZ=0;
 		gluUnProject(window_x,window_y, winZ,  MV,  P, viewport, &objX, &objY, &objZ);
 		glm::vec3 pt(objX,objY, objZ); 
-		size_t i=0;
+		int i=0;
 		if(current_mode == CPU) {
 			for(i=0;i<total_points;i++) {			 
 				if( glm::distance(vec3(X[i]),pt)<0.1) {
@@ -861,7 +861,7 @@ void IntegrateVerletOptimized(float deltaTime) {
 }
 
 void ComputeForces(float dt) {
-	size_t i=0;
+	int i=0;
 	 
 	for(i=0;i<total_points;i++) {
 		F[i] = glm::vec3(0);
@@ -874,7 +874,7 @@ void ComputeForces(float dt) {
 	}	 
 
 	 
-	for(i=0;i<springs.size();i++) {
+	for(i=0;i<(int)springs.size();i++) {
 		glm::vec3 p1 = vec3(X[springs[i].p1]);
 		glm::vec3 p1Last = vec3(X_last[springs[i].p1]);
 		glm::vec3 p2 = vec3(X[springs[i].p2]);
@@ -899,7 +899,7 @@ void ComputeForces(float dt) {
 }
 void IntegrateVerlet(float deltaTime) {
 	float deltaTime2 = (deltaTime*deltaTime);
-	size_t i=0; 
+	int i=0; 
 	
 	float inv_mass = 1.0f/mass;
 	for(i=0;i<total_points;i++) {		
