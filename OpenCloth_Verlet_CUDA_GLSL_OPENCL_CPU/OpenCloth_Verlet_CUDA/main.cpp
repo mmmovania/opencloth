@@ -3,13 +3,16 @@
 //"Realtime Physics" http://www.matthiasmueller.info/realtimephysics/coursenotes.pdf
 //using GLUT,GLEW and GLM libraries. This code is intended for beginners 
 //so that they may understand what is required to do Verlet integration
-//based cloth simulation. There are four modes in this code:
+//based cloth simulation. There are five modes in this code:
 // 1) CPU mode whereby the Verlet integration is carried out on the CPU as in an 
 //    earlier code.
-// 2) GPU mode whereby the Verlet integration is carried out on the GPU using the GPGPU
+// 2) CPU optimzied mode whereby the Verlet integration is carried out on CPU with OpenMP
+// based optimizations to speedup the calculations.
+// 3) GPU mode whereby the Verlet integration is carried out on the GPU using the GPGPU
 //    approach with GLSL as given in this (http://wwwcg.in.tum.de/Research/data/Publications/simpra05.pdf) 
 //    paper. We adopt the point centric approach. Refer to the original paper for details.
-// 3) GPU mode with CUDA and OpenCL. This mode is largely applying the same integration.
+// 4) GPU mode with CUDA and 
+// 5) GPU mode with OpenCL
 //
 //This code is under BSD license. If you make some improvements,
 //or are using this in your research, do let me know and I would appreciate
