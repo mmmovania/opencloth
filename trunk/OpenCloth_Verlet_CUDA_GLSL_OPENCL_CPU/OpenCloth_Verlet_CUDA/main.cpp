@@ -34,7 +34,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <cassert>
- 
+#include <omp.h>
 #include <cuda_runtime.h>
 #include <cutil_inline.h>
 #include <cuda_gl_interop.h>
@@ -59,8 +59,8 @@ float hsize = sizeX/2.0f;
 const int NUM_ITER = 1;
 int selected_index = -1;
 
-enum Mode {CPU, GPU_GLSL, GPU_CUDA, GPU_OPENCL, TOTAL_MODES};
-string modes[TOTAL_MODES] = {"CPU", "GPU/GLSL", "GPU/CUDA", "GPU/OPENCL"};
+enum Mode {CPU,CPU_OPT, GPU_GLSL, GPU_CUDA, GPU_OPENCL, TOTAL_MODES};
+string modes[TOTAL_MODES] = {"CPU","CPU Optimized", "GPU/GLSL", "GPU/CUDA", "GPU/OPENCL"};
 struct Spring {
 	int p1, p2;
 	float rest_length;
@@ -757,6 +757,7 @@ void OnRender() {
 	
 	switch(current_mode) {
 		case CPU:
+		case CPU_OPT:
 			RenderCPU();
 		break;
 
@@ -799,15 +800,57 @@ void OnShutdown() {
 
 
 
-void IntegrateVerlet(float deltaTime) {
-	float deltaTime2 = (deltaTime*deltaTime);
-	size_t i=0; 
-	
-	float inv_mass = 1.0f/mass;
-	for(i=0;i<total_points;i++) {		
+
+inline glm::vec3 GetVerletVelocity(glm::vec3 x_i, glm::vec3 xi_last, float dt ) {
+	return  (x_i - xi_last) / dt;
+}
+void ComputeForcesOptimized(float dt) {
+	int i=0;
+	 
+	#pragma omp parallel for  
+	for(i=0;i<total_points;i++) {
+		F[i] = glm::vec3(0);
+		glm::vec3 V = GetVerletVelocity(vec3(X[i]), vec3(X_last[i]), dt);
+		//add gravity force
+		if(i!=0 && i!=( numX)	)		 
+			F[i] += gravity*mass;
+		//add force due to damping of velocity
+		F[i] += DEFAULT_DAMPING*V;
+	}	 
+
+	#pragma omp parallel for  
+	for(i=0;i<(int)springs.size();i++) {
+		glm::vec3 p1 = vec3(X[springs[i].p1]);
+		glm::vec3 p1Last = vec3(X_last[springs[i].p1]);
+		glm::vec3 p2 = vec3(X[springs[i].p2]);
+		glm::vec3 p2Last = vec3(X_last[springs[i].p2]);
+
+		glm::vec3 v1 = GetVerletVelocity(p1, p1Last, dt);
+		glm::vec3 v2 = GetVerletVelocity(p2, p2Last, dt);
+		
+		glm::vec3 deltaP = p1-p2;
+		glm::vec3 deltaV = v1-v2;
+		float dist = glm::length(deltaP);
+		
+		float leftTerm = -springs[i].Ks * (dist-springs[i].rest_length);
+		float rightTerm = springs[i].Kd * (glm::dot(deltaV, deltaP)/dist);		
+		glm::vec3 springForce = (leftTerm + rightTerm)*glm::normalize(deltaP);
+			 
+		if(springs[i].p1 != 0 && springs[i].p1 != numX)
+			F[springs[i].p1] += springForce; 
+		if(springs[i].p2 != 0 && springs[i].p2 != numX )
+			F[springs[i].p2] -= springForce;
+	}
+}
+
+void IntegrateVerletOptimized(float deltaTime) {
+	float deltaTime2Mass = (deltaTime*deltaTime)/mass;
+	 	
+	#pragma omp parallel for  
+	for(int i=0;i<total_points;i++) {		
 		glm::vec4 buffer = X[i];
 		 
-		X[i] = X[i] + (X[i] - X_last[i]) + deltaTime2*glm::vec4(F[i],0)*inv_mass;
+		X[i] = X[i] + (X[i] - X_last[i]) + deltaTime2Mass*glm::vec4(F[i],0);
 		  
 		X_last[i] = buffer;
 
@@ -817,9 +860,6 @@ void IntegrateVerlet(float deltaTime) {
 	}
 }
 
-inline glm::vec3 GetVerletVelocity(glm::vec3 x_i, glm::vec3 xi_last, float dt ) {
-	return  (x_i - xi_last) / dt;
-}
 void ComputeForces(float dt) {
 	size_t i=0;
 	 
@@ -857,7 +897,25 @@ void ComputeForces(float dt) {
 			F[springs[i].p2] -= springForce;
 	}
 }
- 
+void IntegrateVerlet(float deltaTime) {
+	float deltaTime2 = (deltaTime*deltaTime);
+	size_t i=0; 
+	
+	float inv_mass = 1.0f/mass;
+	for(i=0;i<total_points;i++) {		
+		glm::vec4 buffer = X[i];
+		 
+		X[i] = X[i] + (X[i] - X_last[i]) + deltaTime2*glm::vec4(F[i],0)*inv_mass;
+		  
+		X_last[i] = buffer;
+
+		if(X[i].y <0) {
+			X[i].y = 0; 
+		}
+	}
+}
+
+
 void ApplyProvotDynamicInverse() {	 
 	for(size_t i=0;i<springs.size();i++) { 
 		//check the current lengths of all springs
@@ -887,8 +945,13 @@ void OnIdle() {
 }
 
 void StepPhysics(float dt ) {
-	ComputeForces(dt);		
-	IntegrateVerlet(dt);  
+	if(current_mode == CPU_OPT) {		
+		ComputeForcesOptimized(dt);		
+		IntegrateVerletOptimized(dt); 
+	} else {
+		ComputeForces(dt);		
+		IntegrateVerlet(dt);  
+	}
 }
 
 void OnKey(unsigned char key, int , int) {
@@ -897,6 +960,7 @@ void OnKey(unsigned char key, int , int) {
 			current_mode = (Mode)((current_mode+1)% TOTAL_MODES);
 		break;
 	}
+	printf("Current mode: %s\n", modes[current_mode].c_str());
 	glutPostRedisplay();
 }
 void main(int argc, char** argv) {
