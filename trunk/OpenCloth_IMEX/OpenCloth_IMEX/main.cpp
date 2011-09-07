@@ -1,6 +1,6 @@
 
-//A simple cloth using semi-implicit Euler integration based on the detail on semi-implicit
-//integration on wikipedia (http://en.wikipedia.org/wiki/Symplectic_Euler_method)
+//A simple cloth using IMEX (implicit/explicit) integration based on the SIGGRAPH course notes
+//"Realtime Physics" http://www.matthiasmueller.info/realtimephysics/coursenotes.pdf
 //using GLUT,GLEW and GLM libraries. This code is intended for beginners 
 //so that they may understand what is required to semi-implicit Euler integration
 //based cloth simulation.
@@ -443,16 +443,40 @@ void ApplyProvotDynamicInverse() {
 
 
 void IntegrateSemiImplicit(float deltaTime) {
+	float deltaT2Mass = (deltaTime*deltaTime)/ mass;
 	float deltaTimeMass = deltaTime/ mass;
-	size_t i=0;
- 
+	size_t i=0; 
+
+	//Predictor
+	memset(&F_predicted[0].x,0, total_points * sizeof(glm::vec3));	
+	 
+	glm::vec3 Xg = glm::vec3(0);
+	for(i=0;i<total_points;i++) {		
+		F_predicted[i] += F[i]*W;
+		Xg += X[i];	
+	}
+	Xg /= total_points;
+
+	glm::vec3 delTau = glm::vec3(0);
 	for(i=0;i<total_points;i++) {
-		//Explicit Euler integration uses oldV rather than current V
-		V[i] += (F[i]*deltaTimeMass);		
-		X[i] += deltaTime*V[i];
-		
-		if(X[i].y <0) {
-			X[i].y = 0; 
+		delTau += glm::cross(F_predicted[i], X[i]);
+	}
+
+	for(i=0;i<total_points;i++) {		
+		V[i] += ((F[i]+ F_predicted[i])*deltaTimeMass);				
+		X[i] += deltaTime*V[i];			
+	}
+
+	//Corrector
+	glm::vec3 F_corrected = glm::vec3(0);
+
+	for(i=0;i<total_points;i++) {
+		if(i!=0 && i!=( numX) ) {
+			F_corrected = glm::cross( (Xg - X[i]), delTau) * deltaTime;
+			X[i] += F_corrected*deltaT2Mass; 
+			if(X[i].y <0) {
+				X[i].y = 0; 
+			}
 		}
 	}
 }
@@ -490,7 +514,7 @@ void main(int argc, char** argv) {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowSize(width, height);
-	glutCreateWindow("GLUT Cloth Demo [Semi-Implicit (Symplectic Euler) Integration]");
+	glutCreateWindow("GLUT Cloth Demo [Implicit Explicit (IMEX) Integration]");
 
 	glutDisplayFunc(OnRender);
 	glutReshapeFunc(OnReshape);
