@@ -32,7 +32,11 @@
 #include "GLSLShader.h"
 #include <vector>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp> //for matrices
+#include <glm/gtc/type_ptr.hpp>
+
 #include <cassert>
+
 using namespace std;  
 #pragma comment(lib, "glew32.lib")
 
@@ -105,6 +109,15 @@ int texture_size_y=0;
 
 float startTime =0, fps=0 ;
 int totalFrames=0;
+
+glm::mat4 ellipsoid, inverse_ellipsoid;
+int iStacks = 30;
+int iSlices = 30;
+float fRadius = 1;
+
+// Resolve constraint in object space
+glm::vec3 center = glm::vec3(0,0,0); //object space center of ellipsoid
+float radius = 1;					 //object space radius of ellipsoid
 
 
 GLSLShader verletShader, renderShader;
@@ -334,7 +347,7 @@ void InitGL() {
 	verletShader.LoadFromFile(GL_VERTEX_SHADER, "shaders/verlet.vs");
 	verletShader.LoadFromFile(GL_FRAGMENT_SHADER, "shaders/verlet.fs");
 	verletShader.CreateAndLinkProgram();
-	verletShader.Use();		 
+	verletShader.Use();		 		 	
 		verletShader.AddUniform("X");				glUniform1i(verletShader("X"),0);		//current position sampler
 		verletShader.AddUniform("X_last");			glUniform1i(verletShader("X_last"),1);	//previous position sampler
 		verletShader.AddUniform("DEFAULT_DAMPING");	glUniform1f(verletShader("DEFAULT_DAMPING"),DEFAULT_DAMPING);
@@ -443,6 +456,12 @@ void InitGL() {
 	  
 	InitFBO();
 	InitVBO(); 
+
+	//create a basic ellipsoid object
+	ellipsoid = glm::translate(glm::mat4(1),glm::vec3(0,2,0));
+	ellipsoid = glm::rotate(ellipsoid, 45.0f ,glm::vec3(1,0,0));
+	ellipsoid = glm::scale(ellipsoid, glm::vec3(fRadius,fRadius,fRadius/2));
+	inverse_ellipsoid = glm::inverse(ellipsoid);
 }
 
 void OnReshape(int nw, int nh) {
@@ -503,7 +522,7 @@ void RenderGPU() {
 		
 		glClear(GL_COLOR_BUFFER_BIT);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		verletShader.Use();			 		
+		verletShader.Use();	
 			DrawFullScreenQuad();
 		verletShader.UnUse();
 		//swap read/write pathways
@@ -638,6 +657,13 @@ void OnRender() {
 
 	//draw grid
 	DrawGrid();
+
+	//draw ellipsoid
+	glColor3f(0,1,0);
+	glPushMatrix();
+		glMultMatrixf(glm::value_ptr(ellipsoid));
+			glutWireSphere(fRadius, iSlices, iStacks);
+	glPopMatrix();
 	
 	switch(current_mode) {
 		case CPU:
@@ -672,7 +698,7 @@ void IntegrateVerlet(float deltaTime) {
 	float deltaTime2 = (deltaTime*deltaTime);
 	size_t i=0; 
 	
-	float inv_mass = 1.0/mass;
+	float inv_mass = 1.0f/mass;
 	for(i=0;i<total_points;i++) {		
 		glm::vec4 buffer = X[i];
 		 
@@ -750,6 +776,31 @@ void ApplyProvotDynamicInverse() {
 		}		
 	}
 }
+void EllipsoidCollision() {
+	for(size_t i=0;i<total_points;i++) {
+		glm::vec4 X_0 = (inverse_ellipsoid*X[i]);
+		glm::vec3 delta0 = glm::vec3(X_0.x, X_0.y, X_0.z) - center;
+		float distance = glm::length(delta0);
+		if (distance < 1.0f) {
+			delta0 = (radius - distance) * delta0 / distance;
+
+			// Transform the delta back to original space
+			glm::vec3 delta;
+			glm::vec3 transformInv;
+			transformInv = glm::vec3(ellipsoid[0].x, ellipsoid[1].x, ellipsoid[2].x);
+			transformInv /= glm::dot(transformInv, transformInv);
+			delta.x = glm::dot(delta0, transformInv);
+			transformInv = glm::vec3(ellipsoid[0].y, ellipsoid[1].y, ellipsoid[2].y);
+			transformInv /= glm::dot(transformInv, transformInv);
+			delta.y = glm::dot(delta0, transformInv);
+			transformInv = glm::vec3(ellipsoid[0].z, ellipsoid[1].z, ellipsoid[2].z);
+			transformInv /= glm::dot(transformInv, transformInv);
+			delta.z = glm::dot(delta0, transformInv);
+			X[i] +=  glm::vec4(delta, 0); ; 
+			X_last[i] = X[i];
+		} 
+	}
+}
 
 void OnIdle() {		
 	glutPostRedisplay();	
@@ -758,6 +809,7 @@ void OnIdle() {
 void StepPhysics(float dt ) {
 	ComputeForces(dt);		
 	IntegrateVerlet(dt);  
+	EllipsoidCollision();
 }
 
 void OnKey(unsigned char key, int , int) {
