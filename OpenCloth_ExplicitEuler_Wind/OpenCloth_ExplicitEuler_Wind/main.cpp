@@ -21,9 +21,12 @@
 //
 #include <GL/glew.h>
 #include <GL/wglew.h>
-#include <GL/glut.h>
+#include <GL/freeglut.h>
 #include <vector>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp> //for matrices
+#include <glm/gtc/type_ptr.hpp>
+
 #include <ctime>
 
 #pragma comment(lib, "glew32.lib")
@@ -95,6 +98,14 @@ float bWind = 1;
 
 char info[MAX_PATH]={0};
 
+glm::mat4 ellipsoid, inverse_ellipsoid;
+int iStacks = 30;
+int iSlices = 30;
+float fRadius = 1;
+
+// Resolve constraint in object space
+glm::vec3 center = glm::vec3(0,0,0); //object space center of ellipsoid
+float radius = 1;					 //object space radius of ellipsoid
 
 void StepPhysics(float dt);
 
@@ -299,6 +310,11 @@ void InitGL() {
 		AddSpring(((v - 3) * u) + l1,((v - 1) * u) + l1,KsBend,KdBend,BEND_SPRING);
 	}
  
+	//create a basic ellipsoid object
+	ellipsoid = glm::translate(glm::mat4(1),glm::vec3(0,2,0));
+	ellipsoid = glm::rotate(ellipsoid, 45.0f ,glm::vec3(1,0,0));
+	ellipsoid = glm::scale(ellipsoid, glm::vec3(fRadius,fRadius,fRadius/2));
+	inverse_ellipsoid = glm::inverse(ellipsoid);
 }
 
 void OnReshape(int nw, int nh) {
@@ -353,6 +369,13 @@ void OnRender() {
 	//draw grid
 	DrawGrid();
 	
+	//draw ellipsoid
+	glColor3f(0,1,0);
+	glPushMatrix();
+		glMultMatrixf(glm::value_ptr(ellipsoid));
+			glutWireSphere(fRadius, iSlices, iStacks);
+	glPopMatrix();
+
 	//draw polygons
 	glColor3f(1,1,1);
 	glBegin(GL_TRIANGLES);
@@ -541,6 +564,32 @@ void ApplyProvotDynamicInverse() {
 		}
 	}
 }
+void EllipsoidCollision() {
+	for(size_t i=0;i<total_points;i++) {
+		glm::vec4 X_0 = (inverse_ellipsoid*glm::vec4(X[i],1));
+		glm::vec3 delta0 = glm::vec3(X_0.x, X_0.y, X_0.z) - center;
+		float distance = glm::length(delta0);
+		if (distance < 1.0f) {
+			delta0 = (radius - distance) * delta0 / distance;
+
+			// Transform the delta back to original space
+			glm::vec3 delta;
+			glm::vec3 transformInv;
+			transformInv = glm::vec3(ellipsoid[0].x, ellipsoid[1].x, ellipsoid[2].x);
+			transformInv /= glm::dot(transformInv, transformInv);
+			delta.x = glm::dot(delta0, transformInv);
+			transformInv = glm::vec3(ellipsoid[0].y, ellipsoid[1].y, ellipsoid[2].y);
+			transformInv /= glm::dot(transformInv, transformInv);
+			delta.y = glm::dot(delta0, transformInv);
+			transformInv = glm::vec3(ellipsoid[0].z, ellipsoid[1].z, ellipsoid[2].z);
+			transformInv /= glm::dot(transformInv, transformInv);
+			delta.z = glm::dot(delta0, transformInv);
+			X[i] +=  delta ;
+			V[i] = glm::vec3(0);
+		} 
+	}
+}
+
 void OnIdle() {	
 	
 	/*
@@ -568,7 +617,7 @@ void StepPhysics(float dt ) {
 	float rx = (float(rand())/RAND_MAX)*2-1.0f;
 	float ry = (float(rand())/RAND_MAX)*2-1.0f;
 	float rz = (float(rand())/RAND_MAX)*2-1.0f;
-	wind+=glm::vec3(rx,ry,rz)*dt*0.001f;
+	wind+=glm::vec3(rx,ry,rz)*0.00001f;
 	 
 	ComputeForces();
 
@@ -580,7 +629,7 @@ void StepPhysics(float dt ) {
 		
 		//for RK4
 		//IntegrateRK4(timeStep);
-
+		EllipsoidCollision();
 	ApplyProvotDynamicInverse();	
 }
 
@@ -592,7 +641,7 @@ void OnKey(unsigned char key, int x, int y) {
 }
  
 void main(int argc, char** argv) {
-	atexit(OnShutdown);
+	
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowSize(width, height);
@@ -605,6 +654,8 @@ void main(int argc, char** argv) {
 	glutMouseFunc(OnMouseDown);
 	glutMotionFunc(OnMouseMove);	 
 	glutKeyboardFunc(OnKey);
+	glutCloseFunc(OnShutdown);
+
 	glewInit();
 	InitGL();
 	
