@@ -12,15 +12,16 @@ Current codes contain the complete implementations of
   # Explicit Euler integration
   # Implicit Euler integration
   # Implicit integration (Baraff & Witkin's model)
-  # Semi-Implicit Euler integration (Simplectic Euler)
+  # Semi-Implicit Euler integration (Symplectic Euler)
+  # Implicit Explicit (IMEX)
   # Verlet integration
   # Position based dynamics
 
 == What is not offered in the current version ==
-Currently, there is no collision detection/response other than the naive collision to the floor. 
+Currently, the collision detection/response is only with an arbitrarily oriented ellipsoid and the naive collision to the floor. More primitives like spheres, cubes, convex hulls, arbitrary meshes are in the pipeline and will be added as time permits.
 
 == External dependencies ==
-The codes depend on the freeglut, glew and glm libraries. These are not included with this project and you would need to download them separately.
+The codes depend on the freeglut, glew and glm libraries. For code using CUDA/OpenCL, the latest version of the GPU computing sdk is needed. These are not included with this project and you would need to download them separately.
 
 == Understanding the code ==
 If the code does not make sense, I would suggest a read of the SIGGRAPH course notes (Realtime Physics: www.matthiasmueller.info/realtimephysics/coursenotes.pdf ). 
@@ -30,10 +31,9 @@ For bug reports/suggestions/queries email to me at mova0002@e.ntu.edu.sg.
 == To Do List ==
 Some features that I will be adding soon.
   * Hierarchical position based dynamics
-  * Collision detection and response
+  * Collision detection and response (spheres,cubes,convex hulls etc.)
   * Demo application encapsulating all algorithms
   * Extend to OpenGL3.3 core profile
-  * GPU implementations (CUDA / GLSL)
   * Shading and Texturing
   * Platform independent library (C++ class hierarchy)
   * Soft bodies (Tetrahedra/Hedahedra FEM)
