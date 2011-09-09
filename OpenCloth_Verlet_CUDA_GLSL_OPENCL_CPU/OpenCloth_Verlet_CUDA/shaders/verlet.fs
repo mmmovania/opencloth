@@ -66,7 +66,7 @@ vec2 getNextNeighbor(int n, out float ks, out float kd) {
  
 
 void main() {
-	
+	float mymass = mass; 											//Thanks Erwin for spotting this
 	vec3 x_i	= texture2D(X, gl_TexCoord[0].st).xyz;
 	vec3 x_last = texture2D(X_last, gl_TexCoord[0].st).xyz;
 	vec3 vel	= (x_i - x_last) / dt;	// calc. velocity according to verlet integration
@@ -76,9 +76,9 @@ void main() {
 	float ks=  0.0, kd= 0.0;
 	 
 	if (index==0 || index== (texsize_x - 1.0))
-		 mass = 0.0;
+		 mymass = 0.0;
  
-	vec3 force = gravity*mass + vel*DEFAULT_DAMPING;
+	vec3 force = gravity*mymass + vel*DEFAULT_DAMPING;
  
 	for (int k = 0; k < 12; k++)
 	{ 	    
@@ -109,10 +109,10 @@ void main() {
 	} 
 		
 	vec3 acc;
-	if(mass == 0) 		
+	if(mymass == 0) 		
 	   acc = vec3(0);	//prevent the explosion due to divide by zero
 	else
-	   acc = force/mass;
+	   acc = force/mymass;
 
 	if(x_i.y<0)
 	   x_i.y=0;
