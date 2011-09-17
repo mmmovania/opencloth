@@ -1,0 +1,10 @@
+#summary What are the latest changes in the code based.
+
+= Introduction =
+
+This page is higlighting some recent changes that have been done in the code base.
+
+
+= Details =
+  * Included the simplest possible implicitly integrated implementation of Co-rotated Linear FEM with Stiffness Warping. 
+  * Collision detection with simple ellipsoid
