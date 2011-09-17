@@ -1,4 +1,4 @@
-#summary What are the latest changes in the code based.
+#summary What are the latest changes in the code base.
 
 = Introduction =
 
