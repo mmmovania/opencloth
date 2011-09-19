@@ -1,4 +1,5 @@
 #summary Adding wind and collision detection to the demos
+#labels Featured,Phase-Design,Phase-Implementation
 = Introduction =
 
 This document will illustrate the steps needed to add external forces like Wind and collision detection to the cloth simulation.
