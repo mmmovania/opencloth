@@ -1,4 +1,5 @@
 #summary Discussion of similarities between the Jackobsens approach (Verlet integration) and position based dynamics (PBD).
+#labels Featured,Phase-Design,Phase-Implementation
 
 = Introduction =
 
