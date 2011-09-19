@@ -1,4 +1,5 @@
 #summary This page describes the implementation of Verlet integration on the GPU using the GLSL shading language.
+#labels Featured,Phase-Design,Phase-Implementation
 
 = Introduction =
 We may perform the Verlet integration on the GPU. There are three approaches to do this.
