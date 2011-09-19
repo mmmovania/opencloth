@@ -1,4 +1,5 @@
 #summary What are the latest changes in the code base.
+#labels Featured,Phase-Implementation
 
 = Introduction =
 
@@ -6,5 +7,6 @@ This page is higlighting some recent changes that have been done in the code bas
 
 
 = Details =
+  * Included a demo showing how to do basic texture mapping on cloth as well as how to calculate the normals for lighting.
   * Included the simplest possible implicitly integrated implementation of Co-rotated Linear FEM with Stiffness Warping. 
   * Collision detection with simple ellipsoid
