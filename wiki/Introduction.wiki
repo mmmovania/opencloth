@@ -1,4 +1,5 @@
 #summary Introducing OpenCloth.
+#labels Featured,Phase-Requirements,Phase-Design,Phase-Implementation
 
 = Introduction =
 
@@ -34,6 +35,5 @@ Some features that I will be adding soon.
   * Collision detection and response (spheres,cubes,convex hulls etc.)
   * Demo application encapsulating all algorithms
   * Extend to OpenGL3.3 core profile
-  * Shading and Texturing
   * Platform independent library (C++ class hierarchy)
-  * Soft bodies (Tetrahedra/Hedahedra FEM)
+  * Soft bodies (Tetrahedra/Hexahedra FEM)
