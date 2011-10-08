@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenCloth_MeshlessFEM", "OpenCloth_MeshlessFEM\OpenCloth_MeshlessFEM.vcproj", "{CECDBAEA-0494-4405-8D6A-1837B11E905E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CECDBAEA-0494-4405-8D6A-1837B11E905E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CECDBAEA-0494-4405-8D6A-1837B11E905E}.Debug|Win32.Build.0 = Debug|Win32
+		{CECDBAEA-0494-4405-8D6A-1837B11E905E}.Release|Win32.ActiveCfg = Release|Win32
+		{CECDBAEA-0494-4405-8D6A-1837B11E905E}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
