@@ -12,17 +12,17 @@ class GLSLShader
 public:
 	GLSLShader(void);
 	~GLSLShader(void);	
-	void LoadFromString(GLenum whichShader, const string source);
-	void LoadFromFile(GLenum whichShader, const string filename);
+	void LoadFromString(GLenum whichShader, const string& source);
+	void LoadFromFile(GLenum whichShader, const string& filename);
 	void CreateAndLinkProgram();
 	void Use();
 	void UnUse();
-	void AddAttribute(const string attribute);
-	void AddUniform(const string uniform);
+	void AddAttribute(const string& attribute);
+	void AddUniform(const string& uniform);
 	GLuint GetProgram() const;
 	//An indexer that returns the location of the attribute/uniform
-	GLuint operator[](const string attribute);
-	GLuint operator()(const string uniform);
+	GLuint operator[](const string& attribute);
+	GLuint operator()(const string& uniform);
 	//Program deletion
 	void DeleteProgram() {glDeleteProgram(_program);_program=-1;}
 private:
