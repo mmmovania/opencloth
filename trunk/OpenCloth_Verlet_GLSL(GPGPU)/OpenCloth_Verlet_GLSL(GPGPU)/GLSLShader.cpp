@@ -22,7 +22,7 @@ GLSLShader::~GLSLShader(void)
 	_uniformLocationList.clear();	
 }
 
-void GLSLShader::LoadFromString(GLenum type, const string source) {	
+void GLSLShader::LoadFromString(GLenum type, const string& source) {	
 	GLuint shader = glCreateShader (type);
 
 	const char * ptmp = source.c_str();
@@ -83,27 +83,27 @@ void GLSLShader::UnUse() {
 	glUseProgram(0);
 }
 
-void GLSLShader::AddAttribute(const string attribute) {
+void GLSLShader::AddAttribute(const string& attribute) {
 	_attributeList[attribute]= glGetAttribLocation(_program, attribute.c_str());	
 }
 
 //An indexer that returns the location of the attribute
-GLuint GLSLShader::operator [](const string attribute) {
+GLuint GLSLShader::operator [](const string& attribute) {
 	return _attributeList[attribute];
 }
 
-void GLSLShader::AddUniform(const string uniform) {
+void GLSLShader::AddUniform(const string& uniform) {
 	_uniformLocationList[uniform] = glGetUniformLocation(_program, uniform.c_str());
 }
 
-GLuint GLSLShader::operator()(const string uniform){
+GLuint GLSLShader::operator()(const string& uniform){
 	return _uniformLocationList[uniform];
 }
 GLuint GLSLShader::GetProgram() const {
 	return _program;
 }
 #include <fstream>
-void GLSLShader::LoadFromFile(GLenum whichShader, const string filename){
+void GLSLShader::LoadFromFile(GLenum whichShader, const string& filename){
 	ifstream fp;
 	fp.open(filename.c_str(), ios_base::in);
 	if(fp) {		 
