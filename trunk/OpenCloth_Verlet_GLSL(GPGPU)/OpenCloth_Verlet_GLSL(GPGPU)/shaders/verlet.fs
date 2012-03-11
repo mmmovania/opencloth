@@ -11,6 +11,10 @@ uniform vec2  inv_cloth_size;		//size of a single patch in world space
 uniform vec2  step;					//delta texture size
 uniform vec3  gravity;				//gravitational force
 
+uniform mat4  ellipsoid_xform;		//ellipsoid's transform
+uniform mat4  inv_ellipsoid;		//inverse of the ellipsoid's transform
+uniform vec4  ellipsoid;			//(center in xyz, radius in w) of ellipsoid
+
 vec2 getNextNeighbor(int n, out float ks, out float kd) { 
    //structural springs (adjacent neighbors)
    //        o
@@ -121,6 +125,32 @@ void main() {
 	vec3 tmp = x_i;
 	x_i = x_i * 2.0 - x_last + acc * dt * dt;
 	x_last = tmp;
+
+	//apply collision to the ellipsoid
+	vec4 x0 = inv_ellipsoid*vec4(x_i,1); 
+	vec3 delta0 = x0.xyz-ellipsoid.xyz;
+	float dist2 = dot(delta0, delta0);
+	if(dist2<1) {  
+		delta0 = (ellipsoid.w - dist2) * delta0 / dist2;
+		// Transform the delta back to original space
+		vec3 delta;
+		vec3 transformInv = vec3(ellipsoid_xform[0].x, ellipsoid_xform[1].x, ellipsoid_xform[2].x);
+		transformInv /= dot(transformInv, transformInv);
+
+		delta.x = dot(delta0, transformInv);
+		transformInv = vec3(ellipsoid_xform[0].y, ellipsoid_xform[1].y, ellipsoid_xform[2].y);
+		transformInv /= dot(transformInv, transformInv);
+
+		delta.y = dot(delta0, transformInv);
+		transformInv = vec3(ellipsoid_xform[0].z, ellipsoid_xform[1].z, ellipsoid_xform[2].z);
+		transformInv /= dot(transformInv, transformInv);
+
+		delta.z = dot(delta0, transformInv); 
+		x_i +=  delta ; 
+		x_last = x_i; //this is added so that the net velocity is zero in the next iteration
+					  //removing this will cause points to continuously popup at the collision
+	}
+
 		
 	// fragment outputs
 	gl_FragData[0] = vec4(x_i,1.0);
