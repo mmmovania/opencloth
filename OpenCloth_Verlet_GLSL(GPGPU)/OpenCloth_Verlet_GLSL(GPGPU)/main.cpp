@@ -329,11 +329,16 @@ void InitVBO(){
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+GLuint t_query;
+GLuint64 elapsed_time;
+float delta_time=0;
 
 void InitGL() { 
 	texture_size_x =  numX+1;
 	texture_size_y =  numY+1;
 	CHECK_GL_ERRORS
+
+	glGenQueries(1, &t_query);
 
 	renderShader.LoadFromFile(GL_VERTEX_SHADER, "shaders/render.vs");
 	renderShader.LoadFromFile(GL_FRAGMENT_SHADER, "shaders/render.fs");
@@ -364,6 +369,9 @@ void InitGL() {
 		verletShader.AddUniform("KdBend");			glUniform1f(verletShader("KdBend"),KdBend);		
 		verletShader.AddUniform("inv_cloth_size");	glUniform2f(verletShader("inv_cloth_size"),float(sizeX)/numX,float(sizeY)/numY);		
 		verletShader.AddUniform("step");			glUniform2f(verletShader("step"),1.0f/(texture_size_x-1.0f),1.0f/(texture_size_y-1.0f));
+		verletShader.AddUniform("ellipsoid_xform");	glUniformMatrix4fv(verletShader("ellipsoid_xform"), 1, GL_FALSE, glm::value_ptr(ellipsoid));			
+		verletShader.AddUniform("inv_ellipsoid");	glUniformMatrix4fv(verletShader("inv_ellipsoid"), 1, GL_FALSE, glm::value_ptr(inverse_ellipsoid));			
+		verletShader.AddUniform("ellipsoid");		glUniform4f(verletShader("ellipsoid"),center.x, center.y, center.z, radius);
 	verletShader.UnUse();
 
 	startTime = (float)glutGet(GLUT_ELAPSED_TIME);
@@ -504,10 +512,13 @@ void DrawFullScreenQuad() {
 	glEnd();
 }
 
+
 void RenderGPU() {
 	SetOrthographicProjection();
 	glViewport(0,0,texture_size_x, texture_size_y);
 	CHECK_GL_ERRORS
+	
+	glBeginQuery(GL_TIME_ELAPSED,t_query);
 	for(int i=0;i<NUM_ITER;i++) {
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboID[writeID]);	
 		glDrawBuffers(2, mrt);	
@@ -522,16 +533,23 @@ void RenderGPU() {
 		
 		glClear(GL_COLOR_BUFFER_BIT);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		verletShader.Use();	
+
+		verletShader.Use();			
+			verletShader.AddUniform("ellipsoid_xform");	glUniformMatrix4fv(verletShader("ellipsoid_xform"), 1, GL_FALSE, glm::value_ptr(ellipsoid));			
+			verletShader.AddUniform("inv_ellipsoid");	glUniformMatrix4fv(verletShader("inv_ellipsoid"), 1, GL_FALSE, glm::value_ptr(inverse_ellipsoid));			
+		//verletShader.AddUniform("ellipsoid");		glUniform4f(verletShader("ellipsoid"),center.x, center.y, center.z, radius);
 			DrawFullScreenQuad();
 		verletShader.UnUse();
+		
+		
 		//swap read/write pathways
 		int tmp = readID;
 		readID  = writeID;
 		writeID = tmp;
 	}
-	CHECK_GL_ERRORS
-	glFlush();
+	
+	//glFlush();
+	//glFinish();
 				
 	CHECK_GL_ERRORS						
 	ResetPerspectiveProjection();
@@ -542,7 +560,15 @@ void RenderGPU() {
 	glReadBuffer(GL_COLOR_ATTACHMENT0); 			
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, vboID); 			
 	glReadPixels(0, 0, texture_size_x, texture_size_y, GL_RGBA, GL_FLOAT, 0); 
-						 
+	//glFlush();
+	//glFinish();
+	glEndQuery(GL_TIME_ELAPSED);
+
+	// get the query result
+	glGetQueryObjectui64v(t_query, GL_QUERY_RESULT, &elapsed_time);
+	delta_time = elapsed_time / 1000000.0f;
+	CHECK_GL_ERRORS
+
 	glReadBuffer(GL_NONE); 
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
@@ -565,7 +591,7 @@ void RenderGPU() {
 			glUniform4fv(renderShader("color"),1,vWhite);
 			glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_SHORT, &(indices[0]));
 
-			//draw points
+			//draw points			
 			glUniform4fv(renderShader("color"),1,vRed);
 			glUniform1i(renderShader("selected_index"), selected_index);
 			glDrawArrays(GL_POINTS,0, total_points);
@@ -636,11 +662,12 @@ void OnRender() {
 	{		
 		float elapsedTime = (newTime-startTime);
 		fps = (totalFrames/ elapsedTime)*1000 ;
+		sprintf_s(info, "FPS: %3.2f, Mode: %s, Frame time (GLUT): %3.4f msecs, Frame time (QP): %3.3f - dt: %3.3f", fps,(current_mode==CPU?"CPU":"GPU"), frameTime, frameTimeQP, delta_time);
 		startTime = newTime;
 		totalFrames=0;
 	}
 
-	sprintf_s(info, "FPS: %3.2f, Mode: %s, Frame time (GLUT): %3.4f msecs, Frame time (QP): %3.3f", fps,(current_mode==CPU?"CPU":"GPU"), frameTime, frameTimeQP);
+	
 	glutSetWindowTitle(info);
 
 	glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
@@ -687,6 +714,8 @@ void OnShutdown() {
 	glDeleteBuffers(1, &vboID);
 	glDeleteFramebuffers(2, fboID);
 	glDeleteTextures(4, attachID);
+	
+	glDeleteQueries(1, &t_query);
 
 	renderShader.DeleteProgram();
 	verletShader.DeleteProgram();
