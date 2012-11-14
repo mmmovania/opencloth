@@ -1,5 +1,5 @@
+#summary What are the current areas I am working on.
 #labels Featured,Phase-Implementation,Phase-Design
-#Summary What are the current areas I am working on.
 
 = Introduction =
 
