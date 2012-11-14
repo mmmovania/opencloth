@@ -1,14 +1,12 @@
-#summary What are the latest changes in the code base.
 #labels Featured,Phase-Implementation,Phase-Design
+#Summary What are the current areas I am working on.
 
 = Introduction =
 
-This page is higlighting some recent changes that have been done in the code base.
+This page is higlighting the new changes that will be done in the code base.
 
 
 = Details =
-  * Currently I am busy working on my thesis. As soon as I am done with it, I will update the repository with more stuff like handling of polygonal meshes, skeletal animation and accelerating collision detections etc.
-  * ~~Include a demo implementing Meshless FEM based on the wonderful paper Point based animation of elastic, plastic and melting objects by Matthias Muller et. al and the chapter Meshless FEM in the book Point based graphics.~~
-  * ~~Included a demo showing how to do basic texture mapping on cloth as well as how to calculate the normals for lighting.~~
-  * ~~Included the simplest possible implicitly integrated implementation of Co-rotated Linear FEM with Stiffness Warping.~~ 
-  * ~~Collision detection with simple ellipsoid~~
+  * I will be doing a basic self collision demo soon using the Provot seminal paper (http://graphics.stanford.edu/courses/cs468-02-winter/Papers/Collisions_vetements.pdf) as a start. 
+  * Since collision detection requires a lot of neighbor search, I will be adding support for collision structures like spatial hashing and KdTrees to reduce the neighbor search.
+  * Once these are ready, we will see how to add suport for more current state-of-the-art self collision methods for cloth self collision.
