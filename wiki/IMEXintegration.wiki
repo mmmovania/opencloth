@@ -23,7 +23,7 @@ The core equation is given on page 3 Eq (3) which is as follows
 {{{
 V^n+1 - V^n = (I - (dt^2)/m * H)^-1 (F^n + dt*H*v^n)*dt/m
 }}}
-The part '(I - (dt^2)/m * H)' is combined to get a matrix W. The inverse of this matrix is used as an approximation of implicit integration during the predictor stage as detailed below. Since W is an N*N matrix (N is the total number of mass points), we find the inverse using the Armadillo C++ library which gives fast and convenient matrix routines. Like the original author, I do not store 3N*3N values rather just the N*N values to save space and processing time.
+The part {{{(I - (dt^2)/m * H)}}} is combined to get a matrix W. The inverse of this matrix is used as an approximation of implicit integration during the predictor stage as detailed below. Since W is an N*N matrix (N is the total number of mass points), we find the inverse using the Armadillo C++ library which gives fast and convenient matrix routines. Like the original author, I do not store 3N*3N values rather just the N*N values to save space and processing time.
 
 = Force Calculation and IMEX Integration =
 Reference [1] splits the forces into two parts: a linear part and a non-linear part. The linear part uses the Hessian matrix defined earlier to approximate implicit integration. This integration provides what is called a predictor for velocity and position. The non-linear part is solved by using a simply correction method that tries to balance the rotation error caused by the non-linear forces. This is implemented in the correcter code.
