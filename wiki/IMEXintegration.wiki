@@ -29,7 +29,48 @@ The part {{{(I - (dt^2)/m * H)}}} is combined to get a matrix W. The inverse of 
 Reference [1] splits the forces into two parts: a linear part and a non-linear part. The linear part uses the Hessian matrix defined earlier to approximate implicit integration. This integration provides what is called a predictor for velocity and position. The non-linear part is solved by using a simply correction method that tries to balance the rotation error caused by the non-linear forces. This is implemented in the correcter code.
 
 = Implementation =
-OK now the fun part. How to put all this in code. I will just highlight the crux. The rest of the things should be easily understood by following the code. Here is the code for predictor
+OK now the fun part. How to put all this in code. I will just highlight the crux. The rest of the things should be easily understood by following the code. We first precompute W as follows:
+{{{
+//calculate off-diagonal terms of H matrix (see Eq. 4 on page 4)
+for(int j=0;j<total_points;++j) {
+   for(int i=0;i<total_points;++i) {
+      if(i!=j)
+         H[i+j*total_points] = KsStruct;
+   }
+}
+
+//calculate diagonal terms of H matrix (see Eq. 4 on page 4)
+for(int j=0;j<total_points;++j) {
+   for(int i=0;i<total_points;++i) {
+      if(i==j) {
+         double sum = 0;
+         for(int k=0;k<total_points;k++) {
+	    if(k != i)
+	       sum += H[k+j*total_points];
+	 }
+	 H[i+j*total_points] = -sum;
+      }
+   }
+}
+
+//Calculate the inverse using Armadillo library
+arma::mat T(total_points, total_points); 
+for(int j=0;j<total_points;++j) {
+   for(int i=0;i<total_points;++i) {
+      int index = i+j*total_points; 
+      T(j,i) = (1 - dt2_m*H[index]);
+   }
+}
+T = T.i();
+	
+for(int j=0;j<total_points;++j) {
+   for(int i=0;i<total_points;++i) {
+      int index = i+j*total_points;
+      W[index] = T(j,i);
+   }
+}
+}}}
+Here is the code for predictor
 {{{
 glm::vec3 Xg = glm::vec3(0);
 glm::vec3 delTau = glm::vec3(0);
