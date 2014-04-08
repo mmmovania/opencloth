@@ -7,8 +7,8 @@ The initial IMEX implementation in OpenCloth was fundametally flawed thanks to S
 = Details =
 We know that there are two basic classes of integrations for numercial simulations namely implicit and explicit. The former are more stable but require calculation of a large matrix that is solved using PCG (Preconditioned Conjugate Gradient or similar methods. The latter are simple but unstable. IMEX are a class of integration that give a nice middle ground between implicit and explicit methods.
 
-= IMEX Methods =
-I will now detail the IMEX method as given in Reference [1] for cloth simulation. The first thing that we need is the Jacobian matrix (J) which stores the partial derivatives of the forces at each mass point. The reference [1] writes it as Hessian matrix (H). This is a very large matrix N*N for a cloth mesh with N vertices.
+= IMEX Method =
+I will now detail the IMEX method for cloth simulation as detailed in Reference [1]. The first thing that we need is the Jacobian matrix (J) which stores the partial derivatives of the forces at each mass point. The reference [1] writes it as Hessian matrix (H). This is a very large matrix N*N for a cloth mesh with N vertices.
 In case of 3D, [1] defines H as 
 {{{
 if(i != j)
