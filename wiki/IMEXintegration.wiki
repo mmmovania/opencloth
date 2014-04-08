@@ -1,0 +1,59 @@
+#summary Details about the IMEX Integration Method
+#labels Phase-Implementation,Phase-Design
+
+= Introduction =
+The initial IMEX implementation in OpenCloth was fundametally flawed thanks to Saggita for spotting this to me. Honestly, I simply copied content from the algorithm given in the Reference [1]. To reimplement it correctly, I had to dive deep into the paper to understand what it is trying to do. So here is my understanding about this awesome method. 
+
+= Details =
+We know that there are two basic classes of integrations for numercial simulations namely implicit and explicit. The former are more stable but require calculation of a large matrix that is solved using PCG (Preconditioned Conjugate Gradient or similar methods. The latter are simple but unstable. IMEX are a class of integration that give a nice middle ground between implicit and explicit methods.
+
+= IMEX Methods =
+I will now detail the IMEX method as given in Reference [1] for cloth simulation. The first thing that we need is the Jacobian matrix (J) which stores the partial derivatives of the forces at each mass point. The reference [1] writes it as Hessian matrix (H). This is a very large matrix N*N for a cloth mesh with N vertices.
+In case of 3D, [1] defines H as 
+{{{
+if(i != j)
+   Hij=kij
+else
+   Hij=sum kij
+}}}
+This matrix is easily obtained by using the spring stiffnes values (kij). 
+
+Reference [1] splits the forces into two parts: a linear part and a non-linear part. The linear part uses the Hessian matrix defined earlier to approximate implicit integration. This integration provides what is called a predictor for velocity and position. The non-linear part is solved by using a simply correction method that tries to balance the rotation error caused by the non-linear forces. This is implemented in the correcter code.
+
+= Implementation =
+OK now the fun part. How to put all this in code. I will just highlight the crux. The rest of the things should be easily understood by following the code. Here is the code for predictor
+'
+glm::vec3 Xg = glm::vec3(0);
+glm::vec3 delTau = glm::vec3(0);
+
+//Predictor
+for(i=0;i<total_points;i++) {
+   glm::vec3 sum;
+   for(j=0;j<total_points;++j)
+      sum  += F[i]*W[i*total_points + j];
+   F_predicted[i] = sum;
+   delTau += glm::cross(F_predicted[i], X[i]);
+   Xg += X[i];
+
+   V[i] += ((F[i]+  F_predicted[i])*deltaTimeMass);				
+		
+   V[i] *= GLOBAL_DAMPING;
+   X[i] += deltaTime*V[i];		
+}
+Xg /= total_points; 
+'
+
+The corrector code is relatively straightforward. It simply uses the corrected force to estimate the new position as shown below
+'
+//Corrector
+glm::vec3 F_corrected = glm::vec3(0);
+for(i=0;i<total_points;i++) {
+   if(i!=0 && i!=( numX) ) {
+      F_corrected = glm::cross( (Xg - X[i]), delTau) * deltaTime;
+      X[i] += F_corrected*deltaT2Mass; 
+   }
+}
+'
+
+= Reference =
+[1] Interactive animation of structured deformable objects by Desbrun et al. url: http://www.multires.caltech.edu/pubs/GI99.pdf
