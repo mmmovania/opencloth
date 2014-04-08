@@ -14,7 +14,7 @@ In case of 3D, [1] defines H as
 if(i != j)
    Hij=kij
 else
-   Hij=sum kij
+   Hij=-sum_i kij
 }}}
 This matrix is easily obtained by using the spring stiffnes values (kij). 
 
@@ -22,7 +22,7 @@ Reference [1] splits the forces into two parts: a linear part and a non-linear p
 
 = Implementation =
 OK now the fun part. How to put all this in code. I will just highlight the crux. The rest of the things should be easily understood by following the code. Here is the code for predictor
-'
+{{{
 glm::vec3 Xg = glm::vec3(0);
 glm::vec3 delTau = glm::vec3(0);
 
@@ -41,10 +41,10 @@ for(i=0;i<total_points;i++) {
    X[i] += deltaTime*V[i];		
 }
 Xg /= total_points; 
-'
+}}}
 
 The corrector code is relatively straightforward. It simply uses the corrected force to estimate the new position as shown below
-'
+{{{
 //Corrector
 glm::vec3 F_corrected = glm::vec3(0);
 for(i=0;i<total_points;i++) {
@@ -53,7 +53,7 @@ for(i=0;i<total_points;i++) {
       X[i] += F_corrected*deltaT2Mass; 
    }
 }
-'
+}}}
 
 = Reference =
 [1] Interactive animation of structured deformable objects by Desbrun et al. url: http://www.multires.caltech.edu/pubs/GI99.pdf
