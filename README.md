@@ -29,9 +29,9 @@ Currently. this project contains complete implementations of (in alphabetical or
   * WebGL port of Explicit Euler Integration 
 
 #Live WebGL Demos
-<a target="_blank" href="OpenCloth_WebGL/WebGLOpenCloth.html">Live WebGL Demo 1</a>
+<a target="_blank" href="http://rawgit.com/mmmovania/opencloth/OpenCloth_WebGL/WebGLOpenCloth.html">Live WebGL Demo 1</a>
 
-<a target="_blank" href="OpenCloth_WebGL/WebGLOpenClothTextured.html">Live WebGL Demo 2</a>
+<a target="_blank" href="http://rawgit.com/mmmovania/opencloth/OpenCloth_WebGL/WebGLOpenClothTextured.html">Live WebGL Demo 2</a>
 
 #Demo Videos
 This section will add more recent videos that reflect the recent contents of OpenCloth.
