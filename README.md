@@ -14,19 +14,19 @@ If this project has helped you with your research or project, please let me know
 
 #Details
 Currently. this project contains complete implementations of (in alphabetical order)
-  # Co-Rotated Linear FEM
-  # Explicit Euler integration
-  # Explicit Euler integration with texture mapping and lighting
-  # Explicit Euler integration with wind
-  # Implicit Explicit (IMEX) method
-  # Implicit integration (Baraff & Witkin's model)
-  # Implicit Euler integration
-  # Meshless FEM 
-  # Position based dynamics
-  # Semi-Implicit integration (Symplectic Euler)
-  # Verlet integration
-  # Verlet integration on CUDA, GLSL (using GPGPU technique) and OpenCL
-  # WebGL port of Explicit Euler Integration 
+  * Co-Rotated Linear FEM
+  * Explicit Euler integration
+  * Explicit Euler integration with texture mapping and lighting
+  * Explicit Euler integration with wind
+  * Implicit Explicit (IMEX) method
+  * Implicit integration (Baraff & Witkin's model)
+  * Implicit Euler integration
+  * Meshless FEM 
+  * Position based dynamics
+  * Semi-Implicit integration (Symplectic Euler)
+  * Verlet integration
+  * Verlet integration on CUDA, GLSL (using GPGPU technique) and OpenCL
+  * WebGL port of Explicit Euler Integration 
 
 #Live WebGL Demos
 <a target="_blank" href="http://opencloth.googlecode.com/svn/trunk/OpenCloth_WebGL/WebGLOpenCloth.html">Live WebGL Demo 1</a>
