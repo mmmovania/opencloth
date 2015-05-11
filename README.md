@@ -7,6 +7,8 @@ Introducing an OpenGL based cloth simulation code base. We implement all of the 
 #Publications using OpenCloth
 M. Vo, S. G. Narasimhan, and Y. Sheikh, <a target="_blank" href="https://www.cs.cmu.edu/~ILIM/projects/IL/TextIllumSep/papers/CCD14.pdf">Separating Texture and Illumination for Single-Shot Structured Light Reconstruction</a> in The IEEE Conference on Computer Vision and Pattern Recognition (CVPR) Workshops, June 2014. 
 
+Hanwen, Li and Yi Wan, <a href="http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6221705&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6221705">An object-oriented system for dynamics-based 3D cloth simulation</a> in the IEEE International Conference on Information Science and Technology (ICIST), 23-25 March 2012. 
+
 Stephen Spinks, <a href="http://www.stephenspinks.com/project.html">Mass Spring Particle Systems</a> Bachelor of Science (Hons.) Final Year Report, University of Glamorgan, May 2012.
  
 #Tell us if OpenCloth has helped you in your research
