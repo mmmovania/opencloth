@@ -6,7 +6,7 @@ Introducing an OpenGL based cloth simulation code base. We implement all of the 
 
 #Publications using OpenCloth
 M. Vo, S. G. Narasimhan, and Y. Sheikh, <a target="_blank"
-href="http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=7121014&filter%3DAND%28p_IS_Number%3A4359286%29">
+href="http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=7121014&filter%3DAND%28p_IS_Number%3A4359286%29">Texture Illumination Separation for Single-shot Structured Light Reconstruction</a> in 
 IEEE Transactions on Pattern Analysis and Machine Intelligence (IEEE PAMI), Vol(PP), No(99), June 2015.
 
 M. Vo, S. G. Narasimhan, and Y. Sheikh, <a target="_blank" href="https://www.cs.cmu.edu/~ILIM/projects/IL/TextIllumSep/papers/CCD14.pdf">Separating Texture and Illumination for Single-Shot Structured Light Reconstruction</a> in The IEEE Conference on Computer Vision and Pattern Recognition (CVPR) Workshops, June 2014. 
