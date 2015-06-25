@@ -5,6 +5,10 @@ This project was previously hosted on google code. Now that google code will pha
 Introducing an OpenGL based cloth simulation code base. We implement all of the existing cloth simulation algorithms in as simplistic an approach as possible so that learners may know exactly what is needed to get a cloth simulation system up and running in OpenGL with a minimum of fuss. OpenCloth project has been initiated with a view that it may help beginners and researchers alike to implement the basic algorithms for cloth simulation using OpenGL API. It is not intended as another library that you can plugin into your game engine directly. Rather, you can learn from it and then implement a technique or two in you own game/physics engine. With a little bit of effort, it should be straight forward to implement the discussed algorithms on other platforms and Graphics API. Focus is on how to handle the bare minimum required to implement the techniques. Rather than wrapping code into classes, we implement the whole code in a single source file. 
 
 #Publications using OpenCloth
+M. Vo, S. G. Narasimhan, and Y. Sheikh, <a target="_blank"
+href="http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=7121014&filter%3DAND%28p_IS_Number%3A4359286%29">
+IEEE Transactions on Pattern Analysis and Machine Intelligence (IEEE PAMI), Vol(PP), No(99), June 2015.
+
 M. Vo, S. G. Narasimhan, and Y. Sheikh, <a target="_blank" href="https://www.cs.cmu.edu/~ILIM/projects/IL/TextIllumSep/papers/CCD14.pdf">Separating Texture and Illumination for Single-Shot Structured Light Reconstruction</a> in The IEEE Conference on Computer Vision and Pattern Recognition (CVPR) Workshops, June 2014. 
 
 Hanwen, Li and Yi Wan, <a href="http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6221705&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6221705">An object-oriented system for dynamics-based 3D cloth simulation</a> in the IEEE International Conference on Information Science and Technology (ICIST), 23-25 March 2012. 
