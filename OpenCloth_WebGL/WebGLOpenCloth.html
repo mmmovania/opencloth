@@ -1,20 +1,42 @@
 <html>
 	<head>
-		<script src="js/Three.js"></script>
-		<script src="js/custom/ThreeExtras.js"></script>
-		<script src="js/Stats.js"></script>
+        <meta charset="utf-8">
+		<script src="js/three.min.js"></script>
+		<!--<script src="js/custom/ThreeExtras.js"></script>-->
+		<script src="js/stats.min.js"></script>
+            
 		<title>OpenCloth WebGL Demo by Movania Muhammad Mobeen</title>
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #f0f0f0;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			.info {
+				position: absolute;
+				background-color: black;
+				opacity: 0.8;
+				color: white;
+				text-align: center;
+				top: 0px;
+				width: 100%;
+			}
+
+			.info a {
+				color: #00ffff;
+			}
+		</style>
 	</head>
 
 	<body>
-        <div align=right><p><b>OpenCloth WebGL Demo</b><br>
-                            Integrator: Explicit Euler <br>
-                             Step size: 1/60</p></div>
+         
 	</body>
 
 	<script type="text/javascript">
-		var camera, scene, renderer,
-		    geometry, material, mesh, plane;
+		var camera, scene, renderer, material, mesh, plane;
 		var stats;
 		var oldX, oldY, rX, rY, dist, state, D2R;
 		var simulate = true;
@@ -49,7 +71,7 @@
 			spring.Ks=ks;
 			spring.Kd=kd;
 			var deltaP = new THREE.Vector3();
-			deltaP.sub(mesh.geometry.vertices[a].position,mesh.geometry.vertices[b].position);
+			deltaP.subVectors(mesh.geometry.vertices[a],mesh.geometry.vertices[b]);
 			spring.rest_length = Math.sqrt(deltaP.dot(deltaP));
 			springs.push(spring);
 		}
@@ -91,14 +113,14 @@
 		var geoY = new THREE.Geometry();
 		var geoZ = new THREE.Geometry();
 
-		geoX.vertices.push(new THREE.Vertex(new THREE.Vector3(0, 0, 0)));
-		geoX.vertices.push(new THREE.Vertex(new THREE.Vector3(1, 0, 0)));
+		geoX.vertices.push(new THREE.Vector3(0, 0, 0));
+		geoX.vertices.push(new THREE.Vector3(1, 0, 0));
 
-		geoY.vertices.push(new THREE.Vertex(new THREE.Vector3(0, 0, 0)));
-		geoY.vertices.push(new THREE.Vertex(new THREE.Vector3(0, 1, 0)));
+		geoY.vertices.push(new THREE.Vector3(0, 0, 0));
+		geoY.vertices.push(new THREE.Vector3(0, 1, 0));
 
-		geoZ.vertices.push(new THREE.Vertex(new THREE.Vector3(0, 0, 0)));
-		geoZ.vertices.push(new THREE.Vertex(new THREE.Vector3(0, 0, 1)));
+		geoZ.vertices.push(new THREE.Vector3(0, 0, 0));
+		geoZ.vertices.push(new THREE.Vector3(0, 0, 1));
 
 		var lineX = new THREE.Line(geoX, new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 3 }));
 		var lineY = new THREE.Line(geoY, new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 3 }));
@@ -110,7 +132,7 @@
 
 
 
-        geometry = new THREE.PlaneGeometry( -20, 20, 10, 10);
+       var geometry = new THREE.PlaneGeometry( -20, 20, 10, 10);
 
 		plane = new THREE.Mesh(  geometry,new THREE.MeshBasicMaterial( { color: 0x0000ff, wireframe:true } ));
 		plane.doubleSided = true;
@@ -122,7 +144,7 @@
        	//Fill in vertices of cloth mesh
         for(var j=0;j<v;j++) {
 			for(var i=0;i<u;i++) {
-			    var tmp = new THREE.Vertex(new THREE.Vector3( ((i/(u-1)) *2.0-1.)* hsize,size+1, ((j/(v-1.0) )* size)));
+			    var tmp = new THREE.Vector3( ((i/(u-1)) *2.0-1.)* hsize,size+1, ((j/(v-1.0) )* size));
 				F.push(new THREE.Vector3(0,0,0));
 				V.push(new THREE.Vector3(0,0,0));
 			    geometry.vertices.push(tmp);
@@ -136,7 +158,7 @@
 				i1 = i0 + 1;
 				i2 = i0 + (numX+1);
 				i3 = i2 + 1;
-				/*
+				
 				if ((j+i)%2) {
 				    var face1 = new THREE.Face3(i0, i2, i1);
 				    var face2 = new THREE.Face3(i1, i2, i3);
@@ -148,15 +170,15 @@
 					geometry.faces.push(face1);
 					geometry.faces.push(face2);
 				}
-				*/
+				
 				//using Face4 instead of Face3 based on suggestion of Mr.Doob
-				var face = new THREE.Face4(i0, i2, i3, i1);
-				geometry.faces.push(face);
+				//var face = new THREE.Face4(i0, i2, i3, i1);
+				//geometry.faces.push(face);
 			}
 		}
 
         geometry.computeFaceNormals();
-		geometry.computeCentroids();
+		//geometry.computeCentroids();
 
 		mesh = new THREE.Mesh( geometry,new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe:true } )); //new THREE.MeshNormalMaterial() );
 		mesh.doubleSided = true;
@@ -203,7 +225,7 @@
 		console.log("Total velocities: "+V.length);
 
        //	renderer = new THREE.CanvasRenderer();
-       	renderer = new THREE.WebGLRenderer();
+		renderer = new THREE.WebGLRenderer({ alpha: true });
        	renderer.setSize( window.innerWidth, window.innerHeight );
 
        	document.body.appendChild( renderer.domElement );
@@ -261,24 +283,24 @@
 	      F[i].y=0;
 	      F[i].z=0;
 	      if(i!=0 && i!= numX)
-	         F[i].addSelf(GRAVITY);
+	         F[i].add(GRAVITY);
 
-	      F[i].subSelf( V[i].multiplyScalar(DEFAULT_DAMPING));
+	      F[i].sub( V[i].multiplyScalar(DEFAULT_DAMPING));
 	   }
 
 	   //add spring forces
 	   var deltaP = new THREE.Vector3();
 	   var deltaV = new THREE.Vector3();
 	   for(var i=0;i<springs.length;i++) {
-	   		var p1 = mesh.geometry.vertices[springs[i].p1].position;
-	   		var p2 = mesh.geometry.vertices[springs[i].p2].position;
+	   		var p1 = mesh.geometry.vertices[springs[i].p1];
+	   		var p2 = mesh.geometry.vertices[springs[i].p2];
 
 	   		var v1 = V[springs[i].p1];
 	   		var v2 = V[springs[i].p2];
 
 
-	   		deltaP.sub(p1,p2);
-	   		deltaV.sub(v1,v2);
+	   		deltaP.subVectors(p1,p2);
+	   		deltaV.subVectors(v1,v2);
 	   		var dist = deltaP.length();
             //console.log("p1: "+p1+", p2: "+p2+" Dis: "+dist);
 
@@ -287,30 +309,30 @@
 	   		var springForce = (deltaP.normalize()).multiplyScalar(leftTerm + rightTerm);
 
 	   		if(springs[i].p1 != 0 && springs[i].p1 != numX)
-	   			F[springs[i].p1].addSelf(springForce);
+	   			F[springs[i].p1].add(springForce);
 	   		if(springs[i].p2 != 0 && springs[i].p2 != numX )
-	   			F[springs[i].p2].subSelf(springForce);
+	   			F[springs[i].p2].sub(springForce);
 		}
 	}
 
 	function integrateEuler() {
 		var deltaTimeMass = dt/ mass;
         var N = mesh.geometry.vertices.length;
-        var oldP = mesh.geometry.vertices[N-1].position.clone();
-        geometry.__dirtyVertices = true;
+        var oldP = mesh.geometry.vertices[N-1].clone(); 
+        mesh.geometry.verticesNeedUpdate = true;
 	 	for(var i=0;i<N;i++) {
 			var oldV = V[i];
 
-			V[i].addSelf(F[i].multiplyScalar(deltaTimeMass));
-			mesh.geometry.vertices[i].position.addSelf(oldV.multiplyScalar(dt));
+			V[i].add(F[i].multiplyScalar(deltaTimeMass));
+			mesh.geometry.vertices[i].add(oldV.multiplyScalar(dt));
 
-			if(mesh.geometry.vertices[i].position.y <0) {
-				mesh.geometry.vertices[i].position.y = 0;
+			if(mesh.geometry.vertices[i].y <0) {
+				mesh.geometry.vertices[i].y = 0;
 			}
 		}
 
 		var diff = new THREE.Vector3(0,0,0);
-		diff.sub(oldP, mesh.geometry.vertices[N - 1].position);
+		diff.subVectors(oldP, mesh.geometry.vertices[N - 1]);
 
 		simulate = (diff.lengthSq()> EPSILON2);
         //
