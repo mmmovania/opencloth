@@ -236,6 +236,7 @@
 			renderer = new THREE.WebGLRenderer({ alpha: true });
 	       	renderer.setSize( window.innerWidth, window.innerHeight );
 
+		renderer.setClearColor( 0x000000, 1 );
 	      	document.body.appendChild( renderer.domElement );
 
 	       	stats = new Stats();
