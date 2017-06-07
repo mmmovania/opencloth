@@ -183,7 +183,7 @@
 	        geometry.computeVertexNormals();
 			//geometry.computeCentroids();
 
-			mesh = new THREE.Mesh( geometry,new THREE.MeshPhongMaterial( { map: new THREE.TextureLoader().load( "opencloth.png" ) } )); //new THREE.MeshNormalMaterial() );
+			mesh = new THREE.Mesh( geometry,new THREE.MeshPhongMaterial( { map: new THREE.TextureLoader().load( "https://github.com/mmmovania/opencloth/blob/master/OpenCloth_WebGL/opencloth.png" ) } )); //new THREE.MeshNormalMaterial() );
 			mesh.doubleSided = true;
 			mesh.geometry.dynamic = true; //for WebGL renderer
 
