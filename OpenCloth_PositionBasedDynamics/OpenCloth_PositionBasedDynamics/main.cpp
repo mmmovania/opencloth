@@ -258,11 +258,14 @@ void OnMouseMove(int x, int y)
 		
 		 
 		V[selected_index] = glm::vec3(0);
-		X[selected_index].x += Right[0]*valX ;
-		float newValue = X[selected_index].y+Up[1]*valY;
-		if(newValue>0)
-			X[selected_index].y = newValue;
-		X[selected_index].z += Right[2]*valX + Up[2]*valY;		
+		//X[selected_index].x += Right[0]*valX ;
+		//float newValue = X[selected_index].y+Up[1]*valY;
+		//if(newValue>0)
+		//	X[selected_index].y = newValue;
+		//X[selected_index].z += Right[2]*valX + Up[2]*valY;
+		X[selected_index].x += Right[0] * valX + Up[0] * valY;
+		X[selected_index].y += Right[1] * valX + Up[1] * valY;
+		X[selected_index].z += Right[2] * valX + Up[2] * valY;
 	}
 	oldX = x; 
 	oldY = y; 
@@ -510,7 +513,14 @@ void OnRender() {
 	viewDir.x = (float)-MV[2];
 	viewDir.y = (float)-MV[6];
 	viewDir.z = (float)-MV[10];
-	Right = glm::cross(viewDir, Up);
+	//Right = glm::cross(viewDir, Up);
+	Right.x = (float)MV[0];
+	Right.y = (float)MV[4];
+	Right.z = (float)MV[8];
+	
+	Up.x = (float)MV[1];
+	Up.y = (float)MV[5];
+	Up.z = (float)MV[9];
 
 	//draw grid
 	DrawGrid();
@@ -756,7 +766,7 @@ void UpdateBendingConstraint(int index) {
 		d=1.0; //d = clamp(d,-1.0,1.0);
 	
 	//in both case sqrt(1-d*d) will be zero and nothing will be done.
-	//0° case, the triangles are facing in the opposite direction, folded together.
+	//0?case, the triangles are facing in the opposite direction, folded together.
 	if(d == -1.0){ 
 	   phi = PI;  //acos(-1.0) == PI
        if(phi == phi0[index]) 
@@ -773,7 +783,7 @@ void UpdateBendingConstraint(int index) {
 
 	  return;
 	}
-	if(d == 1.0){ //180° case, the triangles are planar
+	if(d == 1.0){ //180?case, the triangles are planar
 		phi = 0.0;  //acos(1.0) == 0.0
         if(phi == phi0[index]) 
 			return; //nothing to do 
