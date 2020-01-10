@@ -1,17 +1,17 @@
 
 //A simple cloth using Verlet integration based on the SIGGRAPH course notes
 //"Realtime Physics" http://www.matthiasmueller.info/realtimephysics/coursenotes.pdf
-//using GLUT,GLEW and GLM libraries. This code is intended for beginners 
+//using GLUT,GLEW and GLM libraries. This code is intended for beginners
 //so that they may understand what is required to do Verlet integration
 //based cloth simulation. There are five modes in this code:
-// 1) CPU mode whereby the Verlet integration is carried out on the CPU as in an 
+// 1) CPU mode whereby the Verlet integration is carried out on the CPU as in an
 //    earlier code.
 // 2) CPU optimzied mode whereby the Verlet integration is carried out on CPU with OpenMP
 // based optimizations to speedup the calculations.
 // 3) GPU mode whereby the Verlet integration is carried out on the GPU using the GPGPU
-//    approach with GLSL as given in this (http://wwwcg.in.tum.de/Research/data/Publications/simpra05.pdf) 
+//    approach with GLSL as given in this (http://wwwcg.in.tum.de/Research/data/Publications/simpra05.pdf)
 //    paper. We adopt the point centric approach. Refer to the original paper for details.
-// 4) GPU mode with CUDA and 
+// 4) GPU mode with CUDA and
 // 5) GPU mode with OpenCL
 //
 //This code is under BSD license. If you make some improvements,
@@ -20,7 +20,7 @@
 //
 //Controls:
 //   Spacebar to toggle btw the five modes i.e. GPU_GLSL, GPU_CUDA, GPU_OPENCL, CPU and CPU optimized
-//   left click on any empty region to rotate, middle click to zoom 
+//   left click on any empty region to rotate, middle click to zoom
 //   left click and drag any point to drag it.
 //
 //Author: Movania Muhammad Mobeen
@@ -42,7 +42,7 @@
 #include <cutil_inline.h>
 #include <cuda_gl_interop.h>
 
-using namespace std;  
+using namespace std;
 
 #pragma comment(lib, "glew32.lib")
 #pragma comment(lib, "cudart.lib")
@@ -55,9 +55,9 @@ const int width = 1024, height = 1024;
 
 int numX = 63, numY=63;
 const int total_points = (numX+1)*(numY+1);
-int sizeX = 4, 
+int sizeX = 4,
 	sizeY = 4;
-float hsize = sizeX/2.0f;
+float halfsize = sizeX/2.0f;
 
 const int NUM_ITER = 1;
 int selected_index = -1;
@@ -93,10 +93,10 @@ int spring_count=0;
 char info[MAX_PATH]={0};
 
 const float DEFAULT_DAMPING =  -0.0125f;
-float	KsStruct = 50.75f,KdStruct = -0.25f; 
+float	KsStruct = 50.75f,KdStruct = -0.25f;
 float	KsShear = 50.75f,KdShear = -0.25f;
 float	KsBend = 50.95f,KdBend = -0.25f;
-glm::vec3 gravity=glm::vec3(0.0f,-0.00981f,0.0f);  
+glm::vec3 gravity=glm::vec3(0.0f,-0.00981f,0.0f);
 float mass = 1.0f;
 
 float timeStep =  1.0f/60.0f;
@@ -129,7 +129,7 @@ GLuint vboID;
 GLenum mrt[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
 
 
-float* data[2];
+float* dataX[2];
 size_t i=0;
 GLfloat vRed[4]={1,0,0,1};
 GLfloat vWhite[4]={1,1,1,1};
@@ -142,7 +142,7 @@ glm::vec3 vec3(glm::vec4 v) {
 }
 
 
-void InitCUDA(const unsigned int ); 
+void InitCUDA(const unsigned int );
 void UploadCUDA(float * positions, float * positions_old, const int size);
 void VerletCUDA(float4 * pos_vbo, int2 texsize, float2 step, const float & damp, const float & mass, float dt, float2 inv_cloth_size);
 void ShutdownCUDA();
@@ -151,42 +151,42 @@ void InitOpenCL(const unsigned int size, int texture_size_x, int texture_size_y,
 void ShutdownOpenCL();
 void UploadOpenCL(float * positions, float * positions_old, const int size);
 void VerletOpenCL(int texsizeX, int texsizeY);
-void ReadBuffer(float* pData, int size); 
+void ReadBuffer(float* pData, int size);
 
-void InitFBO() { 
-	data[0] = &X[0].x;
-	data[1] = &X_last[0].x;
+void InitFBO() {
+	dataX[0] = &X[0].x;
+	dataX[1] = &X_last[0].x;
 	glGenTextures(4, attachID);
 	glGenFramebuffers(2, fboID);
-	
+
 	for(int j=0;j<2;j++) {
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboID[j]);	
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboID[j]);
 		printf("FBO %d has textures: ", j);
 		for(int i=0;i<2;i++) {
 			glBindTexture(GL_TEXTURE_2D, attachID[i+2*j]);
-			
-			glPixelStorei(GL_UNPACK_ALIGNMENT,1);	//not needed here since our data is 32 bits aligned but added here 
+
+			glPixelStorei(GL_UNPACK_ALIGNMENT,1);	//not needed here since our data is 32 bits aligned but added here
 													//for consistency
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, texture_size_x, texture_size_y, 0, GL_RGBA, GL_FLOAT, data[i]); // NULL = Empty texture
-			
-			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, mrt[i],	GL_TEXTURE_2D, attachID[i+2*j], 0);			 
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, texture_size_x, texture_size_y, 0, GL_RGBA, GL_FLOAT, dataX[i]); // NULL = Empty texture
+
+			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, mrt[i],	GL_TEXTURE_2D, attachID[i+2*j], 0);
 			printf(" %d ", i+ 2*j);
 		}
 		printf("attached\n");
 	}
-	 
-	 
+
+
 	GLenum status = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
 	if (status == GL_FRAMEBUFFER_COMPLETE ) {
 		printf("FBO setup succeeded.");
 	} else {
 		printf("Problem with FBO setup.");
 	}
-	
+
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	CHECK_GL_ERRORS
 }
@@ -205,25 +205,25 @@ void AddSpring(int a, int b, float ks, float kd, int type) {
 }
 void OnMouseDown(int button, int s, int x, int y)
 {
-	if (s == GLUT_DOWN) 
+	if (s == GLUT_DOWN)
 	{
-		oldX = x; 
-		oldY = y; 
+		oldX = x;
+		oldY = y;
 		int window_y = (height - y);
 		float norm_y = float(window_y)/float(height/2.0);
 		int window_x = x ;
 		float norm_x = float(window_x)/float(width/2.0);
-		
+
 		float winZ=0;
 		glReadPixels( x, height-y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ );
 		if(winZ==1)
-			winZ=0; 
+			winZ=0;
 		double objX=0, objY=0, objZ=0;
 		gluUnProject(window_x,window_y, winZ,  MV,  P, viewport, &objX, &objY, &objZ);
-		glm::vec3 pt(objX,objY, objZ); 
+		glm::vec3 pt(objX,objY, objZ);
 		int i=0;
 		if(current_mode == CPU) {
-			for(i=0;i<total_points;i++) {			 
+			for(i=0;i<total_points;i++) {
 				if( glm::distance(vec3(X[i]),pt)<0.1) {
 					selected_index = i;
 					printf("Intersected at %d\n",i);
@@ -243,9 +243,9 @@ void OnMouseDown(int button, int s, int x, int y)
 					}
 				}
 				glUnmapBuffer(GL_ARRAY_BUFFER); // unmap it after use
-			}	
+			}
 		}
-	}	
+	}
 
 	if(button == GLUT_MIDDLE_BUTTON)
 		state = 0;
@@ -262,19 +262,19 @@ void OnMouseMove(int x, int y)
 {
 	if(selected_index == -1) {
 		if (state == 0)
-			dist *= (1 + (y - oldY)/60.0f); 
+			dist *= (1 + (y - oldY)/60.0f);
 		else
 		{
-			rY += (x - oldX)/5.0f; 
-			rX += (y - oldY)/5.0f; 
-		} 
+			rY += (x - oldX)/5.0f;
+			rX += (y - oldY)/5.0f;
+		}
 	} else {
 		float delta = 1500/abs(dist);
-		float valX = (x - oldX)/delta; 
-		float valY = (oldY - y)/delta; 
+		float valX = (x - oldX)/delta;
+		float valY = (oldY - y)/delta;
 		if(abs(valX)>abs(valY))
 			glutSetCursor(GLUT_CURSOR_LEFT_RIGHT);
-		else 
+		else
 			glutSetCursor(GLUT_CURSOR_UP_DOWN);
 
 		if(current_mode==CPU) {
@@ -282,10 +282,10 @@ void OnMouseMove(int x, int y)
 			float newValue = X[selected_index].y+Up[1]*valY;
 			if(newValue>0)
 				X[selected_index].y = newValue;
-			X[selected_index].z += Right[2]*valX + Up[2]*valY;		
+			X[selected_index].z += Right[2]*valX + Up[2]*valY;
 			X_last[selected_index] = X[selected_index];
 		} else {
-			
+
 			glm::vec4* ptr = (glm::vec4*)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
 			glm::vec4 oldVal = ptr[selected_index];
 			glUnmapBuffer(GL_ARRAY_BUFFER); // unmap it after use
@@ -294,32 +294,32 @@ void OnMouseMove(int x, int y)
 			newVal.w =1;
 			// if the pointer is valid(mapped), update VBO
 			if(ptr) {
-				// modify buffer data				
+				// modify buffer data
 				oldVal.x += Right[0]*valX ;
-				
+
 				float newValue = oldVal.y+Up[1]*valY;
 				if(newValue>0)
 					oldVal.y = newValue;
-				oldVal.z += Right[2]*valX + Up[2]*valY;					
-				newVal=oldVal;				
-			}	
-			
+				oldVal.z += Right[2]*valX + Up[2]*valY;
+				newVal=oldVal;
+			}
+
 			if(current_mode == GPU_GLSL) {
 				int xoff = selected_index%texture_size_x;
 				int yoff = selected_index/texture_size_x;
-				
+
 				glBindTexture(GL_TEXTURE_2D, attachID[2*readID]);
 				glTexSubImage2D(GL_TEXTURE_2D,0,xoff,yoff,1,1, GL_RGBA, GL_FLOAT, &newVal[0]);
 
 				glBindTexture(GL_TEXTURE_2D, attachID[2*readID+1]);
 				glTexSubImage2D(GL_TEXTURE_2D,0,xoff,yoff,1,1, GL_RGBA, GL_FLOAT, &newVal[0]);
-			}			
-		}   
+			}
+		}
 	}
-	oldX = x; 
-	oldY = y; 
+	oldX = x;
+	oldY = y;
 
-	glutPostRedisplay(); 
+	glutPostRedisplay();
 }
 
 
@@ -342,8 +342,8 @@ void InitVBO(){
 	const int size = texture_size_x*texture_size_y*4*sizeof(float);
 	glGenBuffers(1, &vboID);
 	glBindBuffer(GL_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_DRAW); 
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);	
+	glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_DRAW);
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 void InitClothVAO() {
 	glGenVertexArrays(1, &clothVAOID);
@@ -354,32 +354,32 @@ void InitClothVAO() {
 		glBufferData (GL_ARRAY_BUFFER, sizeof(float)*4*X.size(), &X[0].x, GL_STATIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer (0, 4, GL_FLOAT, GL_FALSE,0,0);
-		
+
 		CHECK_GL_ERRORS
-		
+
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, clothVBOIndicesID);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort)*indices.size(), &indices[0], GL_STATIC_DRAW);
-		
+
 
 	glBindVertexArray(0);
 }
 
 void DrawCloth()
-{ 
+{
 	glBindVertexArray(clothVAOID);
 		glDrawElements(GL_TRIANGLES, indices.size(),GL_UNSIGNED_SHORT,0);
-	glBindVertexArray(0);	
+	glBindVertexArray(0);
 }
 
 void DrawClothPoints()
-{ 
+{
 	glBindVertexArray(clothVAOID);
-		//draw the masses last						
-		glDrawArrays(GL_POINTS, 0, total_points);					
-	glBindVertexArray(0);	
+		//draw the masses last
+		glDrawArrays(GL_POINTS, 0, total_points);
+	glBindVertexArray(0);
 }
 
-void InitGL() { 
+void InitGL() {
 
 	texture_size_x =  numX+1;
 	texture_size_y =  numY+1;
@@ -389,15 +389,15 @@ void InitGL() {
 	renderShader.LoadFromFile(GL_FRAGMENT_SHADER, "shaders/render.fs");
 	renderShader.CreateAndLinkProgram();
 	renderShader.Use();
-		renderShader.AddUniform("color"); 
-		renderShader.AddUniform("selected_index"); 
-	renderShader.UnUse(); 
+		renderShader.AddUniform("color");
+		renderShader.AddUniform("selected_index");
+	renderShader.UnUse();
 	CHECK_GL_ERRORS
 
 	verletShader.LoadFromFile(GL_VERTEX_SHADER, "shaders/verlet.vs");
 	verletShader.LoadFromFile(GL_FRAGMENT_SHADER, "shaders/verlet.fs");
 	verletShader.CreateAndLinkProgram();
-	verletShader.Use();		 
+	verletShader.Use();
 		verletShader.AddUniform("X");				glUniform1i(verletShader("X"),0);		//current position sampler
 		verletShader.AddUniform("X_last");			glUniform1i(verletShader("X_last"),1);	//previous position sampler
 		verletShader.AddUniform("DEFAULT_DAMPING");	glUniform1f(verletShader("DEFAULT_DAMPING"),DEFAULT_DAMPING);
@@ -411,8 +411,8 @@ void InitGL() {
 		verletShader.AddUniform("KsShear");			glUniform1f(verletShader("KsShear"),KsShear);
 		verletShader.AddUniform("KdShear");			glUniform1f(verletShader("KdShear"),KdShear);
 		verletShader.AddUniform("KsBend");			glUniform1f(verletShader("KsBend"),KsBend);
-		verletShader.AddUniform("KdBend");			glUniform1f(verletShader("KdBend"),KdBend);		
-		verletShader.AddUniform("inv_cloth_size");	glUniform2f(verletShader("inv_cloth_size"),float(sizeX)/numX,float(sizeY)/numY);		
+		verletShader.AddUniform("KdBend");			glUniform1f(verletShader("KdBend"),KdBend);
+		verletShader.AddUniform("inv_cloth_size");	glUniform2f(verletShader("inv_cloth_size"),float(sizeX)/numX,float(sizeY)/numY);
 		verletShader.AddUniform("step");			glUniform2f(verletShader("step"),1.0f/(texture_size_x-1.0f),1.0f/(texture_size_y-1.0f));
 	verletShader.UnUse();
 
@@ -425,41 +425,41 @@ void InitGL() {
 
 	glEnable(GL_DEPTH_TEST);
 	int i=0, j=0, count=0;
-	int l1=0, l2=0; 
+	int l1=0, l2=0;
 	int v = numY+1;
 	int u = numX+1;
 
 	indices.resize( numX*numY*2*3);
- 
+
 	X.resize(total_points);
-	X_last.resize(total_points); 
+	X_last.resize(total_points);
 	F.resize(total_points);
-  
+
 	//fill in positions
-	for( j=0;j<=numY;j++) {		 
-		for( i=0;i<=numX;i++) {	 
-			X[count] = glm::vec4( ((float(i)/(u-1)) *2-1)* hsize, sizeX+1, ((float(j)/(v-1) )* sizeY),1);
+	for( j=0;j<=numY;j++) {
+		for( i=0;i<=numX;i++) {
+			X[count] = glm::vec4( ((float(i)/(u-1)) *2-1)* halfsize, sizeX+1, ((float(j)/(v-1) )* sizeY),1);
 			X_last[count] = X[count];
 			count++;
 		}
-	} 
+	}
 
 	//fill in indices
 	GLushort* id=&indices[0];
-	for (i = 0; i < numY; i++) {        
-		for (j = 0; j < numX; j++) {            
-			int i0 = i * (numX+1) + j;            
-			int i1 = i0 + 1;            
-			int i2 = i0 + (numX+1);            
-			int i3 = i2 + 1;            
-			if ((j+i)%2) {                
-				*id++ = i0; *id++ = i2; *id++ = i1;                
-				*id++ = i1; *id++ = i2; *id++ = i3;            
-			} else {                
-				*id++ = i0; *id++ = i2; *id++ = i3;                
-				*id++ = i0; *id++ = i3; *id++ = i1;            
-			}        
-		}    
+	for (i = 0; i < numY; i++) {
+		for (j = 0; j < numX; j++) {
+			int i0 = i * (numX+1) + j;
+			int i1 = i0 + 1;
+			int i2 = i0 + (numX+1);
+			int i3 = i2 + 1;
+			if ((j+i)%2) {
+				*id++ = i0; *id++ = i2; *id++ = i1;
+				*id++ = i1; *id++ = i2; *id++ = i3;
+			} else {
+				*id++ = i0; *id++ = i2; *id++ = i3;
+				*id++ = i0; *id++ = i3; *id++ = i1;
+			}
+		}
 	}
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -476,20 +476,20 @@ void InitGL() {
 		}
 
 	// Vertical
-	for (l1 = 0; l1 < (u); l1++)	
+	for (l1 = 0; l1 < (u); l1++)
 		for (l2 = 0; l2 < (v - 1); l2++) {
 			AddSpring((l2 * u) + l1,((l2 + 1) * u) + l1,KsStruct,KdStruct,STRUCTURAL_SPRING);
 		}
 
-	
+
 	// Shearing Springs
-	for (l1 = 0; l1 < (v - 1); l1++)	
+	for (l1 = 0; l1 < (v - 1); l1++)
 		for (l2 = 0; l2 < (u - 1); l2++) {
 			AddSpring((l1 * u) + l2,((l1 + 1) * u) + l2 + 1,KsShear,KdShear,SHEAR_SPRING);
 			AddSpring(((l1 + 1) * u) + l2,(l1 * u) + l2 + 1,KsShear,KdShear,SHEAR_SPRING);
 		}
 
-	
+
 	// Bend Springs
 	for (l1 = 0; l1 < (v); l1++) {
 		for (l2 = 0; l2 < (u - 2); l2++) {
@@ -503,22 +503,22 @@ void InitGL() {
 		}
 		AddSpring(((v - 3) * u) + l1,((v - 1) * u) + l1,KsBend,KdBend,BEND_SPRING);
 	}
-	  
+
 	InitFBO();
-	InitVBO(); 
+	InitVBO();
 	InitClothVAO();
 
 	cutilSafeCall(cudaGLSetGLDevice( cutGetMaxGflopsDeviceId() ));	// use device with highest Gflops/s
-	
+
 	InitCUDA(total_points);
 	//register vbo
 	cutilSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_vbo_resource,	vboID,	cudaGraphicsMapFlagsWriteDiscard));
-	
+
 	float invCX = float(sizeX)/numX;
 	float invCY = float(sizeY)/numY;
 	float stepX = 1.0f/(texture_size_x-1.0f);
 	float stepY = 1.0f/(texture_size_y-1.0f);
-	
+
 	InitOpenCL(total_points,texture_size_x, texture_size_y, stepX, stepY, DEFAULT_DAMPING, mass, timeStep, invCX, invCY);
 }
 
@@ -527,15 +527,15 @@ void OnReshape(int nw, int nh) {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(60, (GLfloat)nw / (GLfloat)nh, 1.f, 100.0f);
-	
-	glGetIntegerv(GL_VIEWPORT, viewport); 
+
+	glGetIntegerv(GL_VIEWPORT, viewport);
 	glGetDoublev(GL_PROJECTION_MATRIX, P);
 
 	glMatrixMode(GL_MODELVIEW);
 }
 
 void SetOrthographicProjection()
-{	
+{
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
@@ -545,7 +545,7 @@ void SetOrthographicProjection()
 	glLoadIdentity();
 }
 
-void ResetPerspectiveProjection() 
+void ResetPerspectiveProjection()
 {
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
@@ -582,49 +582,49 @@ void RenderBuffer() {
 void RenderGPU_OpenCL(){
 	UploadOpenCL(&(X[0].x), &(X_last[0].x), total_points);
 	VerletOpenCL(texture_size_x, texture_size_y);
-	
+
 	static unsigned int size = texture_size_x  * texture_size_y * 4 * sizeof(float);
-	
-	glBindBuffer(GL_ARRAY_BUFFER, vboID); 			
+
+	glBindBuffer(GL_ARRAY_BUFFER, vboID);
 	float* ptr = (float*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		ReadBuffer(ptr, size);
-	glUnmapBuffer(GL_ARRAY_BUFFER); 
-	glBindBuffer(GL_ARRAY_BUFFER, 0); 
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	RenderBuffer();
 
 }
 void RenderGPU_CUDA() {
 	float4 * pos;
-	size_t num_bytes; 
+	size_t num_bytes;
     static float2 step = make_float2(1.0f/(texture_size_x-1.0f),1.0f/(texture_size_y-1.0f));
-	static float2 inv_cloth_size = make_float2(float(sizeX)/numX,float(sizeY)/numY);		
+	static float2 inv_cloth_size = make_float2(float(sizeX)/numX,float(sizeY)/numY);
 	UploadCUDA(&(X[0].x), &(X_last[0].x), total_points);
 	cutilSafeCall(cudaGraphicsMapResources(1, &cuda_vbo_resource, 0));
 	cutilSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&pos, &num_bytes, cuda_vbo_resource));
 		VerletCUDA(pos, make_int2(texture_size_x, texture_size_y),step, DEFAULT_DAMPING, mass, timeStep, inv_cloth_size );
 	cutilSafeCall(cudaGraphicsUnmapResources(1, &cuda_vbo_resource, 0));
-	RenderBuffer();			
+	RenderBuffer();
 }
 void RenderGPU_GLSL() {
 	SetOrthographicProjection();
 	glViewport(0,0,texture_size_x, texture_size_y);
 	CHECK_GL_ERRORS
 	for(int i=0;i<NUM_ITER;i++) {
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboID[writeID]);	
-		glDrawBuffers(2, mrt);	
-		
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboID[writeID]);
+		glDrawBuffers(2, mrt);
+
 		CHECK_GL_ERRORS
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, attachID[2*readID]);
-		
+
 		CHECK_GL_ERRORS
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, attachID[2*readID+1]);
-		
+
 		glClear(GL_COLOR_BUFFER_BIT);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		verletShader.Use();			 		
+		verletShader.Use();
 			DrawFullScreenQuad();
 		verletShader.UnUse();
 		//swap read/write pathways
@@ -634,50 +634,50 @@ void RenderGPU_GLSL() {
 	}
 	CHECK_GL_ERRORS
 	glFlush();
-				
-	CHECK_GL_ERRORS						
+
+	CHECK_GL_ERRORS
 	ResetPerspectiveProjection();
 
 	//read back the results into the VBO
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, fboID[readID]);
 
-	glReadBuffer(GL_COLOR_ATTACHMENT0); 			
-	glBindBuffer(GL_PIXEL_PACK_BUFFER, vboID); 			
-	glReadPixels(0, 0, texture_size_x, texture_size_y, GL_RGBA, GL_FLOAT, 0); 
-						 
-	glReadBuffer(GL_NONE); 
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, vboID);
+	glReadPixels(0, 0, texture_size_x, texture_size_y, GL_RGBA, GL_FLOAT, 0);
+
+	glReadBuffer(GL_NONE);
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
 	//reset default framebuffer
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
     glReadBuffer(GL_BACK);
-    glDrawBuffer(GL_BACK); 
-	
+    glDrawBuffer(GL_BACK);
+
 	//restore the rendering modes and viewport
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glViewport(0,0,width, height);
 
 	CHECK_GL_ERRORS
- 
+
 	RenderBuffer();
- 
+
 }
 void RenderCPU() {
-	 
-	/*	
+
+	/*
 	//Semi-fixed time stepping
 	if ( frameTime > 0.0 )
     {
         const float deltaTime = min( frameTime, timeStep );
         StepPhysics(deltaTime );
-        frameTime -= deltaTime;    		
+        frameTime -= deltaTime;
     }
 	*/
 
 
-	//Fixed time stepping + rendering at different fps	
-	if ( accumulator >= timeStep ) {	 
-        StepPhysics(timeStep );		
+	//Fixed time stepping + rendering at different fps
+	if ( accumulator >= timeStep ) {
+        StepPhysics(timeStep );
         accumulator -= timeStep;
     }
 
@@ -704,7 +704,7 @@ void RenderCPU() {
 	DrawCloth();
 
 	glColor3f(1,0,0);
-	//draw points	
+	//draw points
 	/*glBegin(GL_POINTS);
 	for(i=0;i<total_points;i++) {
 		glm::vec3 p = vec3(X[i]);
@@ -714,10 +714,10 @@ void RenderCPU() {
 	}
 	glEnd();*/
 	DrawClothPoints();
- 
+
 }
-void OnRender() {		
-	
+void OnRender() {
+
 	float newTime = (float) glutGet(GLUT_ELAPSED_TIME);
 	frameTime = newTime-currentTime;
 	currentTime = newTime;
@@ -732,13 +732,13 @@ void OnRender() {
 
 	++totalFrames;
 	if((newTime-startTime)>1000)
-	{		
+	{
 		float elapsedTime = (newTime-startTime);
 		fps = (totalFrames/ elapsedTime)*1000 ;
 		startTime = newTime;
 		totalFrames=0;
 		sprintf_s(info, "FPS: %3.2f, Mode: %s, Frame time (GLUT): %3.4f msecs, Frame time (QP): %3.3f", fps,modes[current_mode].c_str(), frameTime, frameTimeQP);
-	
+
 	}
 
 	glutSetWindowTitle(info);
@@ -748,7 +748,7 @@ void OnRender() {
 	glTranslatef(0,0,dist);
 	glRotatef(rX,1,0,0);
 	glRotatef(rY,0,1,0);
-	
+
 	glGetDoublev(GL_MODELVIEW_MATRIX, MV);
 	viewDir.x = (float)-MV[2];
 	viewDir.y = (float)-MV[6];
@@ -757,7 +757,7 @@ void OnRender() {
 
 	//draw grid
 	DrawGrid();
-	
+
 	switch(current_mode) {
 		case CPU:
 		case CPU_OPT:
@@ -775,7 +775,7 @@ void OnRender() {
 		case GPU_OPENCL:
 			RenderGPU_OpenCL();
 		break;
-	} 	
+	}
 	glutSwapBuffers();
 }
 
@@ -809,19 +809,19 @@ inline glm::vec3 GetVerletVelocity(glm::vec3 x_i, glm::vec3 xi_last, float dt ) 
 }
 void ComputeForcesOptimized(float dt) {
 	int i=0;
-	 
-	#pragma omp parallel for  
+
+	#pragma omp parallel for
 	for(i=0;i<total_points;i++) {
 		F[i] = glm::vec3(0);
 		glm::vec3 V = GetVerletVelocity(vec3(X[i]), vec3(X_last[i]), dt);
 		//add gravity force
-		if(i!=0 && i!=( numX)	)		 
+		if(i!=0 && i!=( numX)	)
 			F[i] += gravity*mass;
 		//add force due to damping of velocity
 		F[i] += DEFAULT_DAMPING*V;
-	}	 
+	}
 
-	#pragma omp parallel for  
+	#pragma omp parallel for
 	for(i=0;i<(int)springs.size();i++) {
 		glm::vec3 p1 = vec3(X[springs[i].p1]);
 		glm::vec3 p1Last = vec3(X_last[springs[i].p1]);
@@ -830,17 +830,17 @@ void ComputeForcesOptimized(float dt) {
 
 		glm::vec3 v1 = GetVerletVelocity(p1, p1Last, dt);
 		glm::vec3 v2 = GetVerletVelocity(p2, p2Last, dt);
-		
+
 		glm::vec3 deltaP = p1-p2;
 		glm::vec3 deltaV = v1-v2;
 		float dist = glm::length(deltaP);
-		
+
 		float leftTerm = -springs[i].Ks * (dist-springs[i].rest_length);
-		float rightTerm = springs[i].Kd * (glm::dot(deltaV, deltaP)/dist);		
+		float rightTerm = springs[i].Kd * (glm::dot(deltaV, deltaP)/dist);
 		glm::vec3 springForce = (leftTerm + rightTerm)*glm::normalize(deltaP);
-			 
+
 		if(springs[i].p1 != 0 && springs[i].p1 != numX)
-			F[springs[i].p1] += springForce; 
+			F[springs[i].p1] += springForce;
 		if(springs[i].p2 != 0 && springs[i].p2 != numX )
 			F[springs[i].p2] -= springForce;
 	}
@@ -848,35 +848,35 @@ void ComputeForcesOptimized(float dt) {
 
 void IntegrateVerletOptimized(float deltaTime) {
 	float deltaTime2Mass = (deltaTime*deltaTime)/mass;
-	 	
-	#pragma omp parallel for  
-	for(int i=0;i<total_points;i++) {		
+
+	#pragma omp parallel for
+	for(int i=0;i<total_points;i++) {
 		glm::vec4 buffer = X[i];
-		 
+
 		X[i] = X[i] + (X[i] - X_last[i]) + deltaTime2Mass*glm::vec4(F[i],0);
-		  
+
 		X_last[i] = buffer;
 
 		if(X[i].y <0) {
-			X[i].y = 0; 
+			X[i].y = 0;
 		}
 	}
 }
 
 void ComputeForces(float dt) {
 	int i=0;
-	 
+
 	for(i=0;i<total_points;i++) {
 		F[i] = glm::vec3(0);
 		glm::vec3 V = GetVerletVelocity(vec3(X[i]), vec3(X_last[i]), dt);
 		//add gravity force
-		if(i!=0 && i!=( numX)	)		 
+		if(i!=0 && i!=( numX)	)
 			F[i] += gravity*mass;
 		//add force due to damping of velocity
 		F[i] += DEFAULT_DAMPING*V;
-	}	 
+	}
 
-	 
+
 	for(i=0;i<(int)springs.size();i++) {
 		glm::vec3 p1 = vec3(X[springs[i].p1]);
 		glm::vec3 p1Last = vec3(X_last[springs[i].p1]);
@@ -885,42 +885,42 @@ void ComputeForces(float dt) {
 
 		glm::vec3 v1 = GetVerletVelocity(p1, p1Last, dt);
 		glm::vec3 v2 = GetVerletVelocity(p2, p2Last, dt);
-		
+
 		glm::vec3 deltaP = p1-p2;
 		glm::vec3 deltaV = v1-v2;
 		float dist = glm::length(deltaP);
-		
+
 		float leftTerm = -springs[i].Ks * (dist-springs[i].rest_length);
-		float rightTerm = springs[i].Kd * (glm::dot(deltaV, deltaP)/dist);		
+		float rightTerm = springs[i].Kd * (glm::dot(deltaV, deltaP)/dist);
 		glm::vec3 springForce = (leftTerm + rightTerm)*glm::normalize(deltaP);
-			 
+
 		if(springs[i].p1 != 0 && springs[i].p1 != numX)
-			F[springs[i].p1] += springForce; 
+			F[springs[i].p1] += springForce;
 		if(springs[i].p2 != 0 && springs[i].p2 != numX )
 			F[springs[i].p2] -= springForce;
 	}
 }
 void IntegrateVerlet(float deltaTime) {
 	float deltaTime2 = (deltaTime*deltaTime);
-	int i=0; 
-	
+	int i=0;
+
 	float inv_mass = 1.0f/mass;
-	for(i=0;i<total_points;i++) {		
+	for(i=0;i<total_points;i++) {
 		glm::vec4 buffer = X[i];
-		 
+
 		X[i] = X[i] + (X[i] - X_last[i]) + deltaTime2*glm::vec4(F[i],0)*inv_mass;
-		  
+
 		X_last[i] = buffer;
 
 		if(X[i].y <0) {
-			X[i].y = 0; 
+			X[i].y = 0;
 		}
 	}
 }
 
 
-void ApplyProvotDynamicInverse() {	 
-	for(size_t i=0;i<springs.size();i++) { 
+void ApplyProvotDynamicInverse() {
+	for(size_t i=0;i<springs.size();i++) {
 		//check the current lengths of all springs
 		glm::vec3 p1 = vec3(X[springs[i].p1]);
 		glm::vec3 p2 = vec3(X[springs[i].p2]);
@@ -935,25 +935,25 @@ void ApplyProvotDynamicInverse() {
 				X[springs[i].p2] += glm::vec4(deltaP,0);
 			} else if(springs[i].p2==0 || springs[i].p2 ==numX) {
 				X[springs[i].p1] -= glm::vec4(deltaP,0);
-			} else { 	
+			} else {
 				X[springs[i].p1] -= glm::vec4(deltaP,0);
 				X[springs[i].p2] += glm::vec4(deltaP,0);
 			}
-		}		
+		}
 	}
 }
 
-void OnIdle() {		
-	glutPostRedisplay();	
+void OnIdle() {
+	glutPostRedisplay();
 }
 
 void StepPhysics(float dt ) {
-	if(current_mode == CPU_OPT) {		
-		ComputeForcesOptimized(dt);		
-		IntegrateVerletOptimized(dt); 
+	if(current_mode == CPU_OPT) {
+		ComputeForcesOptimized(dt);
+		IntegrateVerletOptimized(dt);
 	} else {
-		ComputeForces(dt);		
-		IntegrateVerlet(dt);  
+		ComputeForces(dt);
+		IntegrateVerlet(dt);
 	}
 }
 
@@ -967,7 +967,7 @@ void OnKey(unsigned char key, int , int) {
 	glutPostRedisplay();
 }
 void main(int argc, char** argv) {
-	 
+
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowSize(width, height);
@@ -976,14 +976,14 @@ void main(int argc, char** argv) {
 	glutDisplayFunc(OnRender);
 	glutReshapeFunc(OnReshape);
 	glutIdleFunc(OnIdle);
-	
+
 	glutMouseFunc(OnMouseDown);
-	glutMotionFunc(OnMouseMove); 
+	glutMotionFunc(OnMouseMove);
 	glutKeyboardFunc(OnKey);
 	glutCloseFunc(OnShutdown);
 
 	glewInit();
 	InitGL();
-	
-	glutMainLoop();		
+
+	glutMainLoop();
 }

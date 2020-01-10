@@ -128,7 +128,7 @@ GLuint vboID;
 GLenum mrt[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
 
 
-float* data[2];
+float* dataX[2];
 size_t i=0;
 GLfloat vRed[4]={1,0,0,1};
 GLfloat vWhite[4]={1,1,1,1};
@@ -138,8 +138,8 @@ glm::vec3 vec3(glm::vec4 v) {
 }
 
 void InitFBO() { 
-	data[0] = &X[0].x;
-	data[1] = &X_last[0].x;
+	dataX[0] = &X[0].x;
+	dataX[1] = &X_last[0].x;
 	glGenTextures(4, attachID);
 	glGenFramebuffers(2, fboID);
 	
@@ -155,7 +155,7 @@ void InitFBO() {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, texture_size_x, texture_size_y, 0, GL_RGBA, GL_FLOAT, data[i]); // NULL = Empty texture
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, texture_size_x, texture_size_y, 0, GL_RGBA, GL_FLOAT, dataX[i]); // NULL = Empty texture
 			
 			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, mrt[i],	GL_TEXTURE_2D, attachID[i+2*j], 0);			 
 			printf(" %d ", i+ 2*j);

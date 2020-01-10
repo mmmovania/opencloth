@@ -32,7 +32,7 @@
 #include <vector>
 #include <map>
 #include <glm/glm.hpp>
-
+#include <algorithm>
 
 #pragma comment(lib, "glew32.lib")
 
@@ -126,7 +126,7 @@ vector<glm::vec3> b;
 
 //For Conjugate Gradient 
 vector<glm::vec3> residual;
-vector<glm::vec3> prev;
+vector<glm::vec3> previous;
 vector<glm::vec3> update;
  
 float tiny      = 1e-010f;       // TODO: Should be user controllable
@@ -438,7 +438,7 @@ void InitGL() {
 	F0.resize(total_points); 
 	residual.resize(total_points);
 	update.resize(total_points);
-	prev.resize(total_points);
+	previous.resize(total_points);
 
 	//fill in V
 	memset(&(V[0].x),0,total_points*sizeof(glm::vec3));
@@ -565,7 +565,7 @@ void OnShutdown() {
 	F0.clear();
 	b.clear();
 	residual.clear();
-	prev.clear();
+	previous.clear();
 	update.clear();
 }
 
@@ -851,13 +851,13 @@ void ConjugateGradientSolver(float dt) {
 			float v_jx = V[j].x;	
 			float v_jy = V[j].y;
 			float v_jz = V[j].z;
-			glm::vec3 prod = glm::vec3(	A_ij[0][0] * v_jx+A_ij[0][1] * v_jy+A_ij[0][2] * v_jz, //A_ij * prev[j]
+			glm::vec3 prod = glm::vec3(	A_ij[0][0] * v_jx+A_ij[0][1] * v_jy+A_ij[0][2] * v_jz, //A_ij * previous[j]
 										A_ij[1][0] * v_jx+A_ij[1][1] * v_jy+A_ij[1][2] * v_jz,			
 										A_ij[2][0] * v_jx+A_ij[2][1] * v_jy+A_ij[2][2] * v_jz);
 			residual[k] -= prod;//  A_ij * v_j;
 			
 		}
-		prev[k]=residual[k];
+		previous[k]=residual[k];
 	}
 	
 	for(int i=0;i<i_max;i++) {
@@ -876,17 +876,17 @@ void ConjugateGradientSolver(float dt) {
 			for (matrix_iterator A = Abegin; A != Aend;++A) {
 				unsigned int j   = A->first;
 				glm::mat3& A_ij  = A->second;
-				float prevx = prev[j].x;
-				float prevy = prev[j].y;
-				float prevz = prev[j].z;
-				glm::vec3 prod = glm::vec3(	A_ij[0][0] * prevx+A_ij[0][1] * prevy+A_ij[0][2] * prevz, //A_ij * prev[j]
+				float prevx = previous[j].x;
+				float prevy = previous[j].y;
+				float prevz = previous[j].z;
+				glm::vec3 prod = glm::vec3(	A_ij[0][0] * prevx+A_ij[0][1] * prevy+A_ij[0][2] * prevz, //A_ij * previous[j]
 											A_ij[1][0] * prevx+A_ij[1][1] * prevy+A_ij[1][2] * prevz,			
 											A_ij[2][0] * prevx+A_ij[2][1] * prevy+A_ij[2][2] * prevz);
-				update[k] += prod;//A_ij*prev[j];
+				update[k] += prod;//A_ij*previous[j];
 				 
 			}
 			d += glm::dot(residual[k],residual[k]);
-			d2 += glm::dot(prev[k],update[k]);
+			d2 += glm::dot(previous[k],update[k]);
 		} 
 		
 		if(fabs(d2)<tiny)
@@ -900,7 +900,7 @@ void ConjugateGradientSolver(float dt) {
 			if(IsFixed[k])
 				continue;
 
-			V[k] += prev[k]* d3;
+			V[k] += previous[k]* d3;
 			residual[k] -= update[k]*d3;
 			d1 += glm::dot(residual[k],residual[k]);
 		}
@@ -916,7 +916,7 @@ void ConjugateGradientSolver(float dt) {
 		for(size_t k=0;k<total_points;k++) {
 			if(IsFixed[k])
 				continue;
-			prev[k] = residual[k] + prev[k]*d4;
+			previous[k] = residual[k] + previous[k]*d4;
 		}		
 	}	
 }
