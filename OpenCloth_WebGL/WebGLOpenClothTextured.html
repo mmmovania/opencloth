@@ -88,8 +88,8 @@
 			oldY = 0;
 			state = -1;
 			D2R = 0.0174532925199433;
-			size = 4; //world space size of cloth
-	        hsize = size/2;
+			fullsize = 4; //world space size of cloth
+	        halfsize = fullsize/2;
 			u = numX +1;
 			v = numY +1;
 
@@ -137,7 +137,7 @@
 			//Fill in vertices of cloth mesh
 			for(var j=0;j<v;j++) {
 				for(var i=0;i<u;i++) {
-				    var tmp = new THREE.Vector3( ((i/(u-1)) *2.0-1.)* hsize,size+1, ((j/(v-1.0) )* size));
+				    var tmp = new THREE.Vector3( ((i/(u-1)) *2.0-1.)* halfsize,fullsize+1, ((j/(v-1.0) )* fullsize));
 				    tmp.uv = new THREE.Vector2( 	i / (u-1), 	1.0-j / (v-1) );
 
 					F.push(new THREE.Vector3(0,0,0));

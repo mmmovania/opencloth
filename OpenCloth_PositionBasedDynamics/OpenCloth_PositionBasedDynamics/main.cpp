@@ -66,8 +66,8 @@ const int width = 1024, height = 1024;
  
 int numX = 20, numY=20; //these ar the number of quads
 const size_t total_points = (numX+1)*(numY+1);
-int size = 4;
-float hsize = size/2.0f;
+float fullsize = 4.0f;
+float halfsize = fullsize/2.0f;
 
 char info[MAX_PATH]={0};
 
@@ -337,7 +337,7 @@ void InitGL() {
 	//fill in positions
 	for(int j=0;j<=numY;j++) {		 
 		for(int i=0;i<=numX;i++) {	 
-			X[count++] = glm::vec3( ((float(i)/(u-1)) *2-1)* hsize, size+1, ((float(j)/(v-1) )* size));
+			X[count++] = glm::vec3( ((float(i)/(u-1)) *2-1)* halfsize, fullsize+1, ((float(j)/(v-1) )* fullsize));
 		}
 	}
 

@@ -58,8 +58,8 @@ const int width = 1024, height = 1024;
 
 int numX = 20, numY=20;
 const size_t total_points = (numX+1)*(numY+1);
-int size = 4;
-float hsize = size/2.0f;
+float fullsize = 4.0f;
+float halfsize = fullsize/2.0f;
 
 float timeStep =  1/60.0f;
 float currentTime = 0;
@@ -302,7 +302,7 @@ void InitGL() {
 	//fill in X
 	for( j=0;j<v;j++) {
 		for( i=0;i<u;i++) {
-			X[count++] = glm::vec3( ((float(i)/(u-1)) *2-1)* hsize, size+1, ((float(j)/(v-1) )* size));
+			X[count++] = glm::vec3( ((float(i)/(u-1)) *2-1)* halfsize, fullsize+1, ((float(j)/(v-1) )* fullsize));
 		}
 	}
 
@@ -331,8 +331,8 @@ void InitGL() {
 	 
 	for(size_t i=0;i<total_points;i++) {
 		Vertex& t = vertices[i];
-		t.uv.x = (float(X[i].x+hsize)/ float(size)) *10.0f;	
-		t.uv.y = (float(X[i].z)/float(size)) *10.0f;	 
+		t.uv.x = (float(X[i].x+halfsize)/ fullsize) *10.0f;	
+		t.uv.y = (float(X[i].z)/fullsize) *10.0f; 
 	}
 	glPointSize(5);
 
