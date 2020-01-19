@@ -1,7 +1,7 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenCloth_ImplicitEuler", "OpenCloth_ImplicitEuler\OpenCloth_ImplicitEuler.vcproj", "{F20A34F9-DB67-465D-A156-81890F02A07C}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenCloth_ImplicitEuler", "OpenCloth_ImplicitEuler\OpenCloth_ImplicitEuler.vcxproj", "{F20A34F9-DB67-465D-A156-81890F02A07C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
