@@ -48,8 +48,8 @@ This section will add more recent videos that reflect the recent contents of Ope
 #Manipulation
 [![OpenCloth Demo 2](http://img.youtube.com/vi/2E7h38U5-as/0.jpg)](http://www.youtube.com/watch?v=2E7h38U5-as) 
 
-#Quick start
-Windows executables are included in the 'bin' folder, as well as the required dlls.  Double click on any of the exe files.
+Quick start:
+Download or clone the open cloth github repository.  The Windows executables are included in the 'bin' folder, as well as the required dlls.  Double click on any of the exe files.
 
-#Slower start
-Open the Visual Studio solution in the 'opencloth' folder, rebuilding the solution will create the executables in a sub-folder.  You will need to provide a path to the dlls, freeglut.dll and glew32.dll.  You can just copy the dlls from the 'bin' folder into the newly created sub-folders, or add the 'bin' folder to your system path.
+Slower start
+Download or clone the open cloth github repository.  Open the Visual Studio solution in the 'opencloth' folder, rebuilding the solution will create the executables in a sub-folder.  You will need to provide a path to the dlls, freeglut.dll and glew32.dll.  You can just copy the dlls from the 'bin' folder into the newly created sub-folders, or add the 'bin' folder to your system path.
