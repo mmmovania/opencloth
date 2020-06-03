@@ -1,7 +1,7 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenCloth_Verlet_GLSL(GPGPU)", "OpenCloth_Verlet_GLSL(GPGPU)\OpenCloth_Verlet_GLSL(GPGPU).vcproj", "{D076999F-5255-4D3B-BDC0-F6A03DC2B9DE}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenCloth_Verlet_GLSL(GPGPU)", "OpenCloth_Verlet_GLSL(GPGPU)\OpenCloth_Verlet_GLSL(GPGPU).vcxproj", "{D076999F-5255-4D3B-BDC0-F6A03DC2B9DE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

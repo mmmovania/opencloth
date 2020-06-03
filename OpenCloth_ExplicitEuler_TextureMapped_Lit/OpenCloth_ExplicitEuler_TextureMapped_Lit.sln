@@ -1,7 +1,7 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenCloth_ExplicitEuler_TextureMapped_Lit", "OpenCloth_ExplicitEuler_TextureMapped_Lit\OpenCloth_ExplicitEuler_TextureMapped_Lit.vcproj", "{F6D09CB1-09B5-42CC-8A51-98FAAEB4CC4C}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenCloth_ExplicitEuler_TextureMapped_Lit", "OpenCloth_ExplicitEuler_TextureMapped_Lit\OpenCloth_ExplicitEuler_TextureMapped_Lit.vcxproj", "{F6D09CB1-09B5-42CC-8A51-98FAAEB4CC4C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

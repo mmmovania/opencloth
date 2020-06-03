@@ -1,7 +1,7 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenCloth_IMEX", "OpenCloth_IMEX\OpenCloth_IMEX.vcproj", "{D7F42E70-A420-4922-83EF-73B79B65A734}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenCloth_IMEX", "OpenCloth_IMEX\OpenCloth_IMEX.vcxproj", "{D7F42E70-A420-4922-83EF-73B79B65A734}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

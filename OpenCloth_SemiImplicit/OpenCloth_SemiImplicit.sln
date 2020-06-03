@@ -1,7 +1,7 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenCloth_SemiImplicit", "OpenCloth_SemiImplicit\OpenCloth_SemiImplicit.vcproj", "{5ED87C3D-B1DC-467C-AE0F-DE3CCE38C648}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenCloth_SemiImplicit", "OpenCloth_SemiImplicit\OpenCloth_SemiImplicit.vcxproj", "{5ED87C3D-B1DC-467C-AE0F-DE3CCE38C648}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
