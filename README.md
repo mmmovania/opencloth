@@ -50,11 +50,11 @@ This section will add more recent videos that reflect the recent contents of Ope
 
 ## Explicit Euler integration
 
-[![OpenCloth Demo 1](http://img.youtube.com/vi/5MuzlGmLngY/0.jpg)](http://www.youtube.com/watch?v=5MuzlGmLngY)
+[OpenCloth Demo 1](http://www.youtube.com/watch?v=5MuzlGmLngY)
 
 ## Manipulation
 
-[![OpenCloth Demo 2](http://img.youtube.com/vi/2E7h38U5-as/0.jpg)](http://www.youtube.com/watch?v=2E7h38U5-as) 
+[OpenCloth Demo 2](http://www.youtube.com/watch?v=2E7h38U5-as) 
 
 # Quick start
 
