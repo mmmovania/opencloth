@@ -47,6 +47,7 @@ DAMAGE.
 #include <GL/wglew.h>
 #include <GL/freeglut.h>
 #include <vector>
+#include <unordered_map>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp> //for matrices
 #include <glm/gtc/type_ptr.hpp>
@@ -60,6 +61,10 @@ int numX = 20, numY=20;
 const size_t total_points = (numX+1)*(numY+1);
 float fullsize = 4.0f;
 float halfsize = fullsize/2.0f;
+
+// A conservative interaction radius based on particle spacing.
+float collisionRadius = 0.0f;
+float collisionCellSize = 0.0f;
 
 
 int selected_index = -1;
@@ -130,6 +135,7 @@ glm::vec3 center = glm::vec3(0,0,0); //object space center of ellipsoid
 float radius = 1;					 //object space radius of ellipsoid
 
 void StepPhysics(float dt );
+void SelfCollisions();
 
 void AddSpring(int a, int b, float ks, float kd, int type) {
 	Spring spring;
@@ -426,21 +432,110 @@ void OnShutdown() {
 
 
 void IntegrateVerlet(float deltaTime) {
-	float deltaTime2Mass = (deltaTime*deltaTime)/ mass;
-	size_t i=0;
+        float deltaTime2Mass = (deltaTime*deltaTime) / mass;
+        size_t i = 0;
 
+        for (i = 0; i < total_points; i++) {
+                glm::vec3 buffer = X[i];
 
-	for(i=0;i<total_points;i++) {
-		glm::vec3 buffer = X[i];
+                X[i] = X[i] + (X[i] - X_last[i]) + deltaTime2Mass * F[i];
 
-		X[i] = X[i] + (X[i] - X_last[i]) + deltaTime2Mass*F[i];
- 
-		X_last[i] = buffer;
+                X_last[i] = buffer;
 
-		if(X[i].y <0) {
-			X[i].y = 0;
-		}
-	}
+                if (X[i].y < 0) {
+                        X[i].y = 0;
+                }
+        }
+}
+
+struct CellKey {
+        int x;
+        int y;
+        int z;
+
+        bool operator==(const CellKey& other) const {
+                return x==other.x && y==other.y && z==other.z;
+        }
+};
+
+struct CellKeyHash {
+        size_t operator()(const CellKey& key) const {
+                // Based on large primes to reduce collisions.
+                return static_cast<size_t>(key.x * 73856093 ^ key.y * 19349663 ^ key.z * 83492791);
+        }
+};
+
+inline CellKey ComputeCellKey(const glm::vec3& p) {
+        return CellKey{
+                static_cast<int>(floor(p.x / collisionCellSize)),
+                static_cast<int>(floor(p.y / collisionCellSize)),
+                static_cast<int>(floor(p.z / collisionCellSize))
+        };
+}
+
+inline bool IsPinned(int idx) {
+        return (idx == 0 || idx == numX);
+}
+
+void SelfCollisions() {
+        if (collisionCellSize <= 0.0f) return;
+
+        unordered_map<CellKey, vector<int>, CellKeyHash> grid;
+        grid.reserve(total_points * 2);
+
+        for (size_t i = 0; i < total_points; ++i) {
+                CellKey key = ComputeCellKey(X[i]);
+                grid[key].push_back(static_cast<int>(i));
+        }
+
+        const float radius2 = collisionRadius * collisionRadius;
+
+        for (size_t i = 0; i < total_points; ++i) {
+                CellKey base = ComputeCellKey(X[i]);
+                for (int dx = -1; dx <= 1; ++dx) {
+                        for (int dy = -1; dy <= 1; ++dy) {
+                                for (int dz = -1; dz <= 1; ++dz) {
+                                        CellKey neighbor{base.x + dx, base.y + dy, base.z + dz};
+                                        auto it = grid.find(neighbor);
+                                        if (it == grid.end()) continue;
+
+                                        for (int j : it->second) {
+                                                if (j <= static_cast<int>(i)) continue;
+
+                                                glm::vec3 delta = X[i] - X[j];
+                                                float dist2 = glm::dot(delta, delta);
+                                                if (dist2 < radius2 && dist2 > 1e-8f) {
+                                                        float dist = sqrt(dist2);
+                                                        glm::vec3 dir = delta / dist;
+                                                        float penetration = collisionRadius - dist;
+                                                        glm::vec3 correction = 0.5f * penetration * dir;
+
+                                                        bool iPinned = IsPinned(static_cast<int>(i));
+                                                        bool jPinned = IsPinned(j);
+
+                                                        if (iPinned && jPinned)
+                                                                continue;
+
+                                                        if (iPinned) {
+                                                                glm::vec3 full = 2.0f * correction;
+                                                                X[j] -= full;
+                                                                X_last[j] = X[j];
+                                                        } else if (jPinned) {
+                                                                glm::vec3 full = 2.0f * correction;
+                                                                X[i] += full;
+                                                                X_last[i] = X[i];
+                                                        } else {
+                                                                X[i] += correction;
+                                                                X[j] -= correction;
+                                                                X_last[i] = X[i];
+                                                                X_last[j] = X[j];
+                                                        }
+                                                }
+                                        }
+                                }
+                        }
+                }
+        }
 }
 inline glm::vec3 GetVerletVelocity(glm::vec3 x_i, glm::vec3 xi_last, float dt ) {
 	return  (x_i - xi_last) / dt;
@@ -555,10 +650,11 @@ void OnIdle() {
 }
 
 void StepPhysics(float dt ) {
-	ComputeForces(dt);
-		IntegrateVerlet(dt);
-		EllipsoidCollision();
-	//ApplyProvotDynamicInverse();
+        ComputeForces(dt);
+                IntegrateVerlet(dt);
+                SelfCollisions();
+                EllipsoidCollision();
+        //ApplyProvotDynamicInverse();
 }
 
 void main(int argc, char** argv) {
@@ -575,10 +671,14 @@ void main(int argc, char** argv) {
 	glutMouseFunc(OnMouseDown);
 	glutMotionFunc(OnMouseMove);
 
-	glutCloseFunc(OnShutdown);
+        glutCloseFunc(OnShutdown);
 
-	glewInit();
-	InitGL();
+        glewInit();
+        InitGL();
 
-	glutMainLoop();
+        // Initialize self-collision parameters based on current cloth resolution.
+        collisionRadius = (fullsize / static_cast<float>(numX)) * 0.75f;
+        collisionCellSize = collisionRadius;
+
+        glutMainLoop();
 }
