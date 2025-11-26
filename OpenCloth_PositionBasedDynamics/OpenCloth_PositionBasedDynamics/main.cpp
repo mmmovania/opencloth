@@ -49,6 +49,8 @@ DAMAGE.
 #include <GL/wglew.h>
 #include <GL/freeglut.h>
 #include <vector>
+#include <unordered_map>
+#include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp> //for matrices
 #include <glm/gtc/type_ptr.hpp>
@@ -68,6 +70,10 @@ int numX = 20, numY=20; //these ar the number of quads
 const size_t total_points = (numX+1)*(numY+1);
 float fullsize = 4.0f;
 float halfsize = fullsize/2.0f;
+
+// A conservative interaction radius based on particle spacing.
+float collisionRadius = 0.0f;
+float collisionCellSize = 0.0f;
 
 char info[MAX_PATH]={0};
 
@@ -276,7 +282,7 @@ void OnMouseMove(int x, int y)
 
 void DrawGrid()
 {
-	glBegin(GL_LINES);
+        glBegin(GL_LINES);
 	glColor3f(0.5f, 0.5f, 0.5f);
 	for(int i=-GRID_SIZE;i<=GRID_SIZE;i++)
 	{
@@ -286,11 +292,11 @@ void DrawGrid()
 		glVertex3f((float)-GRID_SIZE,0,(float)i);
 		glVertex3f((float)GRID_SIZE,0,(float)i);
 	}
-	glEnd();
+        glEnd();
 }
 
 inline glm::vec3 GetNormal(int ind0, int ind1, int ind2) {
-	glm::vec3 e1 = X[ind0]-X[ind1];
+        glm::vec3 e1 = X[ind0]-X[ind1];
 	glm::vec3 e2 = X[ind2]-X[ind1];
 	return glm::normalize(glm::cross(e1,e2));
 }
@@ -304,9 +310,38 @@ inline float GetDihedralAngle(BendingConstraint c, float& d, glm::vec3& n1, glm:
 }
 #else
 inline int getIndex(int i, int j) {
-	return j*(numX+1) + i;
+        return j*(numX+1) + i;
 }
 #endif
+
+struct CellKey {
+        int x;
+        int y;
+        int z;
+
+        bool operator==(const CellKey& other) const {
+                return x == other.x && y == other.y && z == other.z;
+        }
+};
+
+struct CellKeyHash {
+        size_t operator()(const CellKey& key) const {
+                // Simple hash using large primes to reduce collisions.
+                return static_cast<size_t>(key.x * 73856093 ^ key.y * 19349663 ^ key.z * 83492791);
+        }
+};
+
+inline CellKey ComputeCellKey(const glm::vec3& p) {
+        return CellKey{
+                static_cast<int>(floor(p.x / collisionCellSize)),
+                static_cast<int>(floor(p.y / collisionCellSize)),
+                static_cast<int>(floor(p.z / collisionCellSize))
+        };
+}
+
+inline bool IsFixed(int idx) {
+        return W[idx] <= 0.0f;
+}
 void InitGL() { 
  
 	startTime = (float)glutGet(GLUT_ELAPSED_TIME);
@@ -390,13 +425,19 @@ void InitGL() {
 		kBend=0;
 	if(kDamp>1)
 		kDamp=1;
-	if(kDamp<0)
-		kDamp=0;
-	if(global_dampening>1)
-		global_dampening = 1;
+        if(kDamp<0)
+                kDamp=0;
+        if(global_dampening>1)
+                global_dampening = 1;
 
-	//setup constraints
-	// Horizontal
+        float spacingX = fullsize / static_cast<float>(numX);
+        float spacingY = fullsize / static_cast<float>(numY);
+        float baseSpacing = 0.5f * (spacingX + spacingY);
+        collisionRadius = baseSpacing * 0.75f;
+        collisionCellSize = collisionRadius;
+
+        //setup constraints
+        // Horizontal
 	for (l1 = 0; l1 < v; l1++)	// v
 		for (l2 = 0; l2 < (u - 1); l2++) {
 			AddDistanceConstraint((l1 * u) + l2,(l1 * u) + l2 + 1, kStretch);
@@ -701,8 +742,8 @@ void UpdateDistanceConstraint(int i) {
 }
 
 void UpdateBendingConstraint(int index) {
-	size_t i=0;
-	BendingConstraint c = b_constraints[index]; 
+        size_t i=0;
+        BendingConstraint c = b_constraints[index];
 
 #ifdef USE_TRIANGLE_BENDING_CONSTRAINT
 	//Using the paper suggested by DevO
@@ -830,15 +871,71 @@ void UpdateBendingConstraint(int index) {
 	if(W[c.p3] > 0.0) {
 		tmp_X[c.p3] += dP3*c.k;
 	}	
-	if(W[c.p4] > 0.0) {
-		tmp_X[c.p4] += dP4*c.k;
-	}  
+        if(W[c.p4] > 0.0) {
+                tmp_X[c.p4] += dP4*c.k;
+        }
 #endif
+}
+//----------------------------------------------------------------------------------------------------
+void SelfCollisions() {
+        if (collisionCellSize <= 0.0f)
+                return;
+
+        unordered_map<CellKey, vector<int>, CellKeyHash> grid;
+        grid.reserve(total_points * 2);
+
+        for (size_t i = 0; i < total_points; ++i) {
+                CellKey key = ComputeCellKey(tmp_X[i]);
+                grid[key].push_back(static_cast<int>(i));
+        }
+
+        const float radius2 = collisionRadius * collisionRadius;
+
+        for (size_t i = 0; i < total_points; ++i) {
+                CellKey base = ComputeCellKey(tmp_X[i]);
+                for (int dx = -1; dx <= 1; ++dx) {
+                        for (int dy = -1; dy <= 1; ++dy) {
+                                for (int dz = -1; dz <= 1; ++dz) {
+                                        CellKey neighbor{base.x + dx, base.y + dy, base.z + dz};
+                                        auto it = grid.find(neighbor);
+                                        if (it == grid.end())
+                                                continue;
+
+                                        for (int j : it->second) {
+                                                if (j <= static_cast<int>(i))
+                                                        continue;
+
+                                                glm::vec3 delta = tmp_X[i] - tmp_X[j];
+                                                float dist2 = glm::dot(delta, delta);
+                                                if (dist2 >= radius2 || dist2 <= EPSILON)
+                                                        continue;
+
+                                                float dist = sqrt(dist2);
+                                                float penetration = collisionRadius - dist;
+                                                float w1 = W[i];
+                                                float w2 = W[j];
+                                                float invMass = w1 + w2;
+                                                if (invMass <= EPSILON)
+                                                        continue;
+
+                                                glm::vec3 dir = delta / dist;
+                                                glm::vec3 correction = (penetration / invMass) * dir;
+
+                                                if (w1 > 0.0f)
+                                                        tmp_X[i] += correction * w1;
+
+                                                if (w2 > 0.0f)
+                                                        tmp_X[j] -= correction * w2;
+                                        }
+                                }
+                        }
+                }
+        }
 }
 //----------------------------------------------------------------------------------------------------
 void GroundCollision() //DevO: 24.07.2011
 {
-	for(size_t i=0;i<total_points;i++) {	
+        for(size_t i=0;i<total_points;i++) {
 		if(tmp_X[i].y<0) //collision with ground
 			tmp_X[i].y=0;
 	}
@@ -878,14 +975,15 @@ void UpdateInternalConstraints(float deltaTime) {
  
 	//printf(" UpdateInternalConstraints \n ");
 	for (size_t si=0;si<solver_iterations;++si) {
-		for(i=0;i<d_constraints.size();i++) {
-			UpdateDistanceConstraint(i);
-		} 
-		for(i=0;i<b_constraints.size();i++) {
-			UpdateBendingConstraint(i);
-		}
-		GroundCollision();
-	}
+                for(i=0;i<d_constraints.size();i++) {
+                        UpdateDistanceConstraint(i);
+                }
+                for(i=0;i<b_constraints.size();i++) {
+                        UpdateBendingConstraint(i);
+                }
+                SelfCollisions();
+                GroundCollision();
+        }
 }
 
 void OnIdle() {	
