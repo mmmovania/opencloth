@@ -604,7 +604,7 @@ glm::mat3 ortho_normalize(glm::mat3 A) {
 void UpdateOrientation() {
 	for(int k=0;k<total_tetrahedra;k++) {
 		//Based on description on page 362-364 
-		float div6V = 1.0f / tetrahedra[k].volume*6.0f;
+		float div6V = 1.0f / (tetrahedra[k].volume*6.0f);
 
 		int i0 = tetrahedra[k].indices[0];
 		int i1 = tetrahedra[k].indices[1];
@@ -905,7 +905,7 @@ void ConjugateGradientSolver(float dt) {
 			d1 += glm::dot(residual[k],residual[k]);
 		}
 		
-		if(i >= i_max && d1 < tolerence)
+		if(d1 < tolerence)
 			break;
 
 		if(fabs(d)<tiny)
